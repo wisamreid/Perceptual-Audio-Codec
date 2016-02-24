@@ -299,7 +299,8 @@ def Dequantize(scale, mantissa, nScaleBits=3, nMantBits=5):
 
 
     aQuantizedNum = mantissa << largestScale - scale
-    if scale < R and mantissa > 0:
+    # if scale < R and mantissa > 0:
+    if scale < largestScale and mantissa > 0:
         aQuantizedNum += 1 << largestScale - scale - 1
 
     if sign:
