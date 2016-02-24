@@ -9,10 +9,11 @@ Author: Wisam Reid
 # from mdct_sol import *
 # from window_sol import *
 import numpy as np
+from numpy import *
 import matplotlib.pyplot as plt
-import math
-from numpy.fft import fft, ifft
-from abbreviations import *
+# import math
+# from numpy.fft import fft, ifft
+# from abbreviations import *
 from mdct import *
 
 

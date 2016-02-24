@@ -1,22 +1,22 @@
-from inspect import getsourcefile
-import os.path as path, sys
-current_dir = path.dirname(path.abspath(getsourcefile(lambda:0)))
-sys.path.insert(0, current_dir[:current_dir.rfind(path.sep)])
-from lib.abbreviations import *
-from provided.window import *
-from provided.mdct import *
-from provided.psychoac import *
-import provided.bitalloc_sol as solution
+# from inspect import getsourcefile
+# import os.path as path, sys
+# current_dir = path.dirname(path.abspath(getsourcefile(lambda:0)))
+# sys.path.insert(0, current_dir[:current_dir.rfind(path.sep)])
+# from lib.abbreviations import *
+from window import *
+from mdct import *
+from psychoac import *
+# import provided.bitalloc_sol as solution
 
 infinity = float('inf')
 negative_infinity = float('-inf')
 
-Test_Booleans = [True, True, True, True]
+# Test_Booleans = [True, True, True, True]
 
-test_uniform_bitalloc = Test_Booleans[0]
-test_constant_SNR_bitalloc = Test_Booleans[1]
-test_constant_MNR_bitalloc = Test_Booleans[2]
-test_bitalloc = Test_Booleans[3]
+# test_uniform_bitalloc = Test_Booleans[0]
+# test_constant_SNR_bitalloc = Test_Booleans[1]
+# test_constant_MNR_bitalloc = Test_Booleans[2]
+# test_bitalloc = Test_Booleans[3]
 
 # Question 1.b)
 def BitAllocUniform(bitBudget, maxMantBits, nBands, nLines, SMR=None):

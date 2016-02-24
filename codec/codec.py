@@ -11,7 +11,7 @@ import numpy as np  # used for arrays
 # used by Encode and Decode
 from window import SineWindow  # current window used for MDCT -- implement KB-derived?
 from mdct import MDCT,IMDCT  # fast MDCT implementation (uses numpy FFT)
-from quantize_ import *  # using vectorized versions (to use normal versions, uncomment lines 18,67 below defining vMantissa and vDequantize)
+from quantize import *  # using vectorized versions (to use normal versions, uncomment lines 18,67 below defining vMantissa and vDequantize)
 
 # used only by Encode
 from psychoac import CalcSMRs  # calculates SMRs for each scale factor band

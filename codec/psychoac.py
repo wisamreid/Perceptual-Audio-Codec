@@ -6,18 +6,19 @@ Author: Wisam Reid
 -----------------------------------------------------------------------
 """
 
-from lib.abbreviations import *
-from provided.window import *
-from provided.mdct import *
-from lib.findPeaks import *
+from numpy import *
+# from lib.abbreviations import *
+from window import *
+from mdct import *
+# from lib.findPeaks import *
 
 # Booleans
-test_problem1b = True
-test_problem1c = True
-test_problem1d = True
-test_problem1e = True
-test_problem1f = True
-test_problem1g = True
+# test_problem1b = True
+# test_problem1c = True
+# test_problem1d = True
+# test_problem1e = True
+# test_problem1f = True
+# test_problem1g = True
 
 
 def SPL(intensity):
@@ -37,7 +38,6 @@ def Intensity(spl):
 
     return power(10, (spl - 96) / 10.0)
 
-
 def Thresh(f):
     """Returns the threshold in quiet measured in SPL at frequency f (in Hz)"""
 
@@ -50,7 +50,6 @@ def Thresh(f):
 
     return term1 + term2 + term3
 
-
 def Bark(f):
     """Returns the bark-scale frequency for input frequency f (in Hz) """
 
@@ -60,7 +59,6 @@ def Bark(f):
     term2 = 3.5 * arctan((khz / 7.5) ** 2)
 
     return term1 + term2
-
 
 class Masker:
     """
@@ -118,7 +116,6 @@ class Masker:
 
         return Intensity(splVec)
 
-
 cbFreqLimits = (100.0, 200.0, 300.0, 400.0, 510.0, 630.0, 770.0, 920.0, 1080.0, 1270.0, 1480.0, 1720.0, 2000.0, 2320.0, 2700.0, 3150.0, 3700.0, 4400.0, 5300.0, 6400.0, 7700.0, 9500.0, 12000.0, 15500.0, 24000.0)
 
 def AssignMDCTLinesFromFreqLimits(nMDCTLines, sampleRate, flimit = cbFreqLimits):
@@ -155,6 +152,40 @@ def AssignMDCTLinesFromFreqLimits(nMDCTLines, sampleRate, flimit = cbFreqLimits)
 
     return assignments
 
+def findpeaks(Xwdb, fs, N):
+
+    peaks = []
+    freqs = []
+    
+    length = size(Xwdb)
+
+    # find peaks and order from max amplitude to min
+    for sample in range(1,length-1):
+
+        if (abs(Xwdb[sample]) > abs(Xwdb[sample-1]) and abs(Xwdb[sample]) > abs(Xwdb[sample+1]) and 10.0* log10(abs(Xwdb[sample]))>-30.0):
+
+            peaks = np.append(peaks,Xwdb[sample])
+            freqs = np.append(freqs,sample)
+
+    peaks = peaks.astype(int)
+    freqsIndex = freqs.astype(int)
+
+    # parabolic interpolation
+    estimateFreqs = []
+    estimateAmp = []
+
+    for idx in range(0,len(freqs)):
+
+        a = abs(Xwdb[freqs[idx]-1])
+        b = abs(Xwdb[freqs[idx]])
+        r = abs(Xwdb[freqs[idx]+1])
+        p = (1/2)*(a-r)/(a+r-2*b)
+        A = b-(a-r)*(p/4)
+        estimateFreqs = append(estimateFreqs,(freqs[idx]+p)*(fs/N))
+        estimateAmp = append(estimateAmp,A)
+
+    return estimateAmp, estimateFreqs, freqsIndex
+
 class ScaleFactorBands:
     """
     A set of scale factor bands (each of which will share a scale factor and a
@@ -177,7 +208,6 @@ class ScaleFactorBands:
         self.upperLine = self.lowerLine + nLines
         self.upperLine = add(self.nLines, subtract(self.lowerLine, 1))
 
-
 def getMaskedThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands):
     """
     Return Masked Threshold evaluated at MDCT lines.
@@ -188,7 +218,7 @@ def getMaskedThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands):
 
     N = len(data)
     nMDCTLines = len(MDCTdata)
-    X_fft = fft(HanningWindow(data))[0:N/2]
+    X_fft = fft.fft(HanningWindow(data))[0:N/2]
     alpha = 1.0
 
     masked_intensity = zeros_like(MDCTdata)
@@ -215,7 +245,6 @@ def getMaskedThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands):
     masked_intensity = (masked_intensity + threshold_in_quiet)**(1.0/alpha)
 
     return  SPL(masked_intensity)
-
 
 def CalcSMRs(data, MDCTdata, MDCTscale, sampleRate, sfBands):
     """
