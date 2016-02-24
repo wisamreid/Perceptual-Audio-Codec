@@ -7,36 +7,37 @@ Author: Wisam Reid
 """
 
 from numpy import *
-# from lib.abbreviations import *
 from window import *
 from mdct import *
-# from lib.findPeaks import *
-
-# Booleans
-# test_problem1b = True
-# test_problem1c = True
-# test_problem1d = True
-# test_problem1e = True
-# test_problem1f = True
-# test_problem1g = True
-
 
 def SPL(intensity):
     """
     Returns the SPL corresponding to intensity (in units where 1 implies 96dB)
     """
-    spl = 96. + 10 * log10(intensity)
 
-    return clip(spl, -30, inf)
+    minval=Intensity(-30)
+    if hasattr(intensity, "__len__"):
+        intensity[intensity<minval]=minval
+    else:
+        if intensity<minval:
+            intensity=minval
+    
+    spl=96+10*np.log10(intensity)
+
+    if hasattr(spl, "__len__"):
+        spl[spl<-30.]=-30.
+    else:
+        if spl<-30.:
+            spl=-30.
+
+    return spl
 
 def Intensity(spl):
     """
     Returns the intensity (in units of the reference intensity level) for SPL spl
     """
-
-    spl = clip(spl, -30, 96)
-
-    return power(10, (spl - 96) / 10.0)
+    intensity=10**((spl-96)/10)
+    return intensity
 
 def Thresh(f):
     """Returns the threshold in quiet measured in SPL at frequency f (in Hz)"""
@@ -167,7 +168,8 @@ def findpeaks(Xwdb, fs, N):
             peaks = np.append(peaks,Xwdb[sample])
             freqs = np.append(freqs,sample)
 
-    peaks = peaks.astype(int)
+    # peaks = peaks.astype(int)
+    peaks = absolute(peaks).astype(int)
     freqsIndex = freqs.astype(int)
 
     # parabolic interpolation
