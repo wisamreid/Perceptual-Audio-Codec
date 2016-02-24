@@ -11,6 +11,7 @@ Author: Wisam Reid
 import numpy as np
 from numpy import *
 import matplotlib.pyplot as plt
+import window_ as sol
 # import math
 # from numpy.fft import fft, ifft
 # from abbreviations import *
@@ -19,7 +20,8 @@ from mdct import *
 
 # Booleans
 problem1d = False
-problem1e = True
+problem1e = False
+test_KBD = True
 
 ### Problem 1.d ###
 def SineWindow(dataSampleArray):
@@ -59,24 +61,48 @@ def KBDWindow(dataSampleArray,alpha=4.):
     """
 
     N = float(len(dataSampleArray))
-    t = arange(int(N/2))
+    t = arange(int(N/2 + 1))
+    input = dataSampleArray.copy()
 
     # i0 --> 0th modified bessel function
-    kaiser = cumsum(i0(alpha * pi * sqrt(1.0 - (4.0 * t / N - 1.0) ** 2)))
+    kaiser = i0(alpha * pi * sqrt(1.0 - (4.0 * t / N - 1.0) ** 2)) / np.i0(np.pi * alpha)
 
-    # including boundary value
-    denominator = kaiser[-1] + i0(alpha * pi * sqrt(1.0 - (4.0 * N / 2.0 / N - 1.0) ** 2))
+    denominator =  sum(kaiser ** 2)
 
-    window = sqrt(kaiser / denominator)
-    dataSampleArray *= concatenate((window, window[::-1]), axis=0)
+    numerator = cumsum(kaiser[:-1] ** 2)
+    numerator = concatenate((numerator, numerator[::-1]), axis=0)
 
-    return dataSampleArray
+    window = sqrt(numerator /  denominator)
+    out = input * window
+
+    return out
 
 
 #-----------------------------------------------------------------------------
 
 #Testing code
 if __name__ == "__main__":
+
+    if test_KBD:
+
+        N = 1024
+        n = arange(N)
+
+        # figure and plots
+        plt.plot(n, KBDWindow(ones(N)), 'r', label='KBD Window with $\\alpha=4$')
+        plt.plot(n, sol.KBDWindow(ones(N)), 'b', label='KBD Window Solution')
+
+        # labels
+        plt.xlabel('n (Samples)')
+        plt.xlim(0, N - 1)
+        plt.ylabel('Amplitude')
+        plt.title('Implemented Windows')
+        plt.legend(loc=8)
+
+        # display
+        plt.grid()
+        plt.show()
+
 
     if problem1d: # windows
 
