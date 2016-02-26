@@ -11,7 +11,7 @@ Author: Wisam Reid
 import numpy as np
 from numpy import *
 import matplotlib.pyplot as plt
-import window_ as sol
+# import window_ as sol
 # import math
 # from numpy.fft import fft, ifft
 # from abbreviations import *
@@ -21,7 +21,7 @@ from mdct import *
 # Booleans
 problem1d = False
 problem1e = False
-test_KBD = True
+test_KBD = False
 
 ### Problem 1.d ###
 def SineWindow(dataSampleArray):
