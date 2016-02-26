@@ -346,17 +346,23 @@ if __name__=="__main__":
     import time
     from pcmfile import * # to get access to WAV file handling
 
-    input_filename = "../inputs/castanets.wav"
+    # input_filename = "../inputs/castanets.wav"
     # input_filename = "../inputs/daft.wav"
     # input_filename = "../inputs/german.wav"
     # input_filename = "../inputs/harpsichord.wav"
-    # input_filename = "../inputs/trumpet.wav"
-    coded_filename = "../coded/castanets.pac"
-    output_filename = "../outputs/castanets.wav"
-    # output_filename = "../outputs/german.wav"
+    input_filename = "../inputs/trumpet.wav"
+
+    # coded_filename = "../coded/castanets.pac"
+    # coded_filename = "../coded/daft.pac"
+    # coded_filename = "../coded/german.pac"
+    # coded_filename = "../coded/harpsichord.pac"
+    coded_filename = "../coded/trumpet.pac"
+
+    # output_filename = "../outputs/castanets.wav"
     # output_filename = "../outputs/daft.wav"
+    # output_filename = "../outputs/german.wav"
     # output_filename = "../outputs/harpsichord.wav"
-    # output_filename = "../outputs/trumpet.wav"
+    output_filename = "../outputs/trumpet.wav"
 
     if len(sys.argv) > 1:
         input_filename = sys.argv[1]
