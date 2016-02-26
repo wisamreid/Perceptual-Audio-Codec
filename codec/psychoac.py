@@ -170,7 +170,7 @@ def findpeaks(Xwdb, fs, N):
 
     # peaks = peaks.astype(int)
     peaks = absolute(peaks).astype(int)
-    freqsIndex = freqs.astype(int)
+    freqsIndex = asarray(freqs).astype(int)
 
     # parabolic interpolation
     estimateFreqs = []
