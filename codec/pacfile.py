@@ -351,7 +351,7 @@ if __name__=="__main__":
     # input_filename = "../inputs/german.wav"
     # input_filename = "../inputs/harpsichord.wav"
     # input_filename = "../inputs/trumpet.wav"
-    coded_filename = "coded.pac"
+    coded_filename = "../coded/castanets.pac"
     output_filename = "../outputs/castanets.wav"
     # output_filename = "../outputs/german.wav"
     # output_filename = "../outputs/daft.wav"
