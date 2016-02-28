@@ -14,7 +14,8 @@ from mdct import *
 def MLD(z):
     """
     Calculate the masking level difference factors for z
-    :returns: An array of MLD factors
+
+    Returns: An array of MLD factors
     """
     zVec = np.arange(25)
     MLD = np.zeros_like(zVec)
