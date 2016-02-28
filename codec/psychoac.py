@@ -13,7 +13,7 @@ from mdct import *
 ### Calculate Masking level difference ###
 def MLD(z):
     """
-    Calculate the masking level difference factors for Bark frequency z
+    Calculate the masking level difference factors for z
     :returns: An array of MLD factors
     """
     zVec = np.arange(25)
