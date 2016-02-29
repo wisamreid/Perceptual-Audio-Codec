@@ -332,10 +332,12 @@ def MLD(z):
 
             An array of MLD factors
     """
-    zVec = np.arange(25)
-    MLD = np.zeros_like(zVec)
+    a = 1.25
+    offset = 2.5
 
-    MLD = np.power(10.0, 1.25 * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - 2.5))
+    MLD = np.zeros_like(z)
+
+    MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
 
     return MLD
 
@@ -349,7 +351,7 @@ def SPL_MDCT(data, window):
             data: MDCT data
             window: window used on data
 
-    Returns: 
+    Returns:
 
             array of normalized SPLs
 
@@ -815,15 +817,12 @@ if __name__ == '__main__':
     if test_mld:
 
         print "---- Testing MLD function ----"
-        freqs = np.linspace(0, 20000, 100)
-        mld = [ ]
-        for f in freqs:
-            mld.append(MLD(Bark(f) ) )
+        mld = MLD(Bark(np.linspace(0, 20000, 100)))
         mld = mld/np.amax(mld)
         plt.plot(mld)
-        plt.xlabel('Bark frequency [z]')
+        plt.yscale('linear')
+        plt.xlabel('Bark Frequency [z]')
         plt.ylabel('MLD(z)')
-        plt.xlim(0,25)
-        plt.title('MLD Factor function')
+        plt.xlim(0,16.0)
+        plt.title('MLD Factor')
         plt.show()
-        print "\n\n"
