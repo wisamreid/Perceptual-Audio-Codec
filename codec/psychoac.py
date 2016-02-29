@@ -10,6 +10,21 @@ from numpy import *
 from window import *
 from mdct import *
 
+### Calculate Masking level difference ###
+def MLD(z):
+    """
+    Calculate the masking level difference factors for z
+
+    Returns: An array of MLD factors
+    """
+    zVec = np.arange(25)
+    MLD = np.zeros_like(zVec)
+
+    MLD = np.power(10.0, 1.25 * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - 2.5))
+
+    return MLD
+
+
 def SPL(intensity):
     """
     Returns the SPL corresponding to intensity (in units where 1 implies 96dB)
@@ -21,7 +36,7 @@ def SPL(intensity):
     else:
         if intensity<minval:
             intensity=minval
-    
+
     spl=96+10*np.log10(intensity)
 
     if hasattr(spl, "__len__"):
@@ -157,7 +172,7 @@ def findpeaks(Xwdb, fs, N):
 
     peaks = []
     freqs = []
-    
+
     length = size(Xwdb)
 
     # find peaks and order from max amplitude to min
