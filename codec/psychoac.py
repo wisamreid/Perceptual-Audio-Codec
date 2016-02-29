@@ -122,7 +122,7 @@ cbFreqLimits = (100.0, 200.0, 300.0, 400.0, 510.0, 630.0, 770.0, 920.0, 1080.0, 
 def AssignMDCTLinesFromFreqLimits(nMDCTLines, sampleRate, flimit = cbFreqLimits):
     """
     Assigns MDCT lines to scale factor bands for given sample rate and number
-    of MDCT lines using predefined frequency band cutofsampleRate passed as an array
+    of MDCT lines using predefined frequency band cutoffs passed as an array
     in flimit (in units of Hz). If flimit isn't passed it uses the traditional
     25 Zwicker & Fastl critical bands as scale factor bands.
     """
