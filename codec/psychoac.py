@@ -595,12 +595,12 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
                 # take M/S SMR
                 SMR[channel][line] = SMR_MS[channel][line]
                 # take M/S lines
-                LRMSmdctLines[channel][lowLine:highLine] = MDCT_Spl_MS[channel][lowLine:highLine]
+                LRMSmdctLines[channel][lowLine:highLine] = MDCT_data_MS[channel][lowLine:highLine]
             else:
                 # take L/R SMR
                 SMR[channel][line] = SMR_LR[channel][line]
                 # take L/R lines
-                LRMSmdctLines[channel][lowLine:highLine] = MDCT_Spl_LR[channel][lowLine:highLine]
+                LRMSmdctLines[channel][lowLine:highLine] = MDCTdata[channel][lowLine:highLine]
     
     return SMR,LRMSmdctLines
 
