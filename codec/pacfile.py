@@ -216,7 +216,6 @@ class PACFile(AudioFile):
         # end loop over channels, return signed-fraction samples for this block
         return data
 
-
     def WriteFileHeader(self,codingParams):
         """
         Writes the PAC file header for a just-opened PAC file and uses codingParams
@@ -313,7 +312,7 @@ class PACFile(AudioFile):
             # CUSTOM DATA:
             # pack LRMS array
             for iBand in range(codingParams.sfBands.nBands):
-                pb.WriteBits(LRMS[iCh],1)
+                pb.WriteBits(LRMS[iBand],1)
 
             # finally, write the data in this channel's PackedBits object to the output file
             self.fp.write(pb.GetPackedData())

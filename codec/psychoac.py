@@ -341,7 +341,6 @@ def MLD(z):
 
     return MLD
 
-
 def SPL_MDCT(data, window):
     """
     Compute SPL of MDCT data using a given window
@@ -376,7 +375,6 @@ def SPL_MDCT(data, window):
             spls.append(max( 96.0 + 10.0 * np.log10(scale * np.spacing(1)), -30 ))
 
     return np.asarray(spls)
-
 
 def calcBTHR(data, MDCTdata, MDCTscale, sampleRate, sfBands):
     """
@@ -421,7 +419,6 @@ def calcBTHR(data, MDCTdata, MDCTscale, sampleRate, sfBands):
 
     return  SPL(masked_intensity)
 
-
 def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
     """
     ####### Helper function:  getStereoMaskThreshold #######
@@ -446,6 +443,7 @@ def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
 
     for channel in range(numChannels):
 
+        SMRs.append([])
         # for each band calculate max SMR
         for band in range(sfBands.nBands):
 
@@ -464,11 +462,10 @@ def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
                 SMRs[channel].append(-96.0)
 
             else:
-
+                
                 SMRs[channel].append(np.amax(bandSMR))
 
     return SMRs
-
 
 def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS): # sendMS):
     """
@@ -545,7 +542,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
 
         # plot mld as a function of the MDCT frequencies
         plt.figure(1)
-        plt.plot(freqs,mld)
+        plt.plot(MDCT_freqs,mld)
         plt.xlabel('Freq (Barks)')
         plt.ylabel('MLD(Bark(freq))')
         plt.ylim(0, 1.01)
@@ -590,21 +587,27 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
 
     ################ create final SMR array ################
 
-    SMR = np.zeros_like(SMR_MS[0])
+    SMR = np.zeros_like(SMR_MS)
+    LRMSmdctLines = np.zeros_like(MDCT_Spl_MS) # TODO UNHARDCODE THIS
     # band by band take M/S or L/R
     for channel in range(2):
 
         for line in range(sfBands.nBands):
+            lowLine = sfBands.lowerLine[line]
+            highLine = sfBands.upperLine[line] + 1
 
             if LRMS[line]:
                 # take M/S SMR
                 SMR[channel][line] = SMR_MS[channel][line]
+                # take M/S lines
+                LRMSmdctLines[channel][lowLine:highLine] = MDCT_Spl_MS[channel][lowLine:highLine]
             else:
                 # take L/R SMR
                 SMR[channel][line] = SMR_LR[channel][line]
-
-    return SMR
-
+                # take L/R lines
+                LRMSmdctLines[channel][lowLine:highLine] = MDCT_Spl_LR[channel][lowLine:highLine]
+    
+    return SMR,LRMSmdctLines
 
 if __name__ == '__main__':
 
@@ -615,7 +618,7 @@ if __name__ == '__main__':
     test_problem1e = False
     test_problem1f = False
     test_problem1g = False
-    test_mld = True
+    test_mld = False
 
     #### construct input signal ####
     FS = 48000.0
@@ -629,8 +632,6 @@ if __name__ == '__main__':
 
     for i in range(len(freqs)):
         x += amps[i] * cos(2 * pi * freqs[i] * n / FS)
-
-
 
     if test_problem1b:
 
@@ -652,7 +653,7 @@ if __name__ == '__main__':
 
         signal_SPL = SPL( 4.0/(N**2.0 * 3.0 / 8.0) * abs(X)**2.0)
 
-	figure(figsize=(14, 6))
+        figure(figsize=(14, 6))
         semilogx(f, signal_SPL, 'b')
         semilogx(f[freqs_index], signal_SPL[freqs_index], 'ro')
         xlim(50, FS / 2)
@@ -662,9 +663,6 @@ if __name__ == '__main__':
         title("Signal SPL and peaks N = %i" % N) # Dynamic Title
         grid()
         show()
-
-
-
 
     if test_problem1c:
 
@@ -685,17 +683,11 @@ if __name__ == '__main__':
         title('Input SPL and Threshold in Quiet')
         show()
 
-
-
-
     if test_problem1d:
 
         lower_freqs = [0.0, 100.0, 200.0, 300.0, 400.0, 510.0, 630.0, 770.0, 920.0, 1080.0, 1270.0, 1480.0, 1720.0, 2000.0, 2320.0, 2700.0, 3150.0, 3700.0, 4400.0, 5300.0, 6400.0, 7700.0, 9500.0, 12000.0, 15500.0]
         print "Freqs to Barks:\n"
         print Bark(lower_freqs)
-
-
-
 
     if test_problem1e:
 
@@ -740,9 +732,6 @@ if __name__ == '__main__':
         title('Masking Curve: N = 1024')
         legend(loc=2)
         show()
-
-
-
 
     if test_problem1f:
 
@@ -794,8 +783,6 @@ if __name__ == '__main__':
         legend(loc=2)
         show()
 
-
-
     if test_problem1g:
 
         nMDCTLines = N / 2
@@ -813,7 +800,6 @@ if __name__ == '__main__':
         print "SMRs For Table"
         print SMR_mdct_KBD
 
-
     if test_mld:
 
         print "---- Testing MLD function ----"
@@ -826,3 +812,5 @@ if __name__ == '__main__':
         plt.xlim(0,16.0)
         plt.title('MLD Factor')
         plt.show()
+
+    execfile('pacfile.py')
