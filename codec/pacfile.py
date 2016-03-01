@@ -156,7 +156,7 @@ class PACFile(AudioFile):
         """
         # loop over channels (whose coded data are stored separately) and read in each data block
         data=[]
-        overallScaleFactor=np.zeros((codingParams.nChannels,1),dtype='int')
+        overallScaleFactor=np.zeros((codingParams.nChannels),dtype='int')
         scaleFactor=np.zeros((codingParams.nChannels,codingParams.sfBands.nBands),dtype='int')
         mantissa=np.zeros((codingParams.nChannels,codingParams.nMDCTLines),dtype='int')
         bitAlloc=np.zeros((codingParams.nChannels,codingParams.sfBands.nBands),dtype='int')
@@ -206,7 +206,7 @@ class PACFile(AudioFile):
 
         # recombine into L and R
         # (DECODE HERE) decode the unpacked data for both channels
-        decodedData = self.Decode(scaleFactor,bitAlloc,mantissa, overallScaleFactor,codingParams,LRMS)
+        decodedData = self.Decode(scaleFactor,bitAlloc,mantissa,overallScaleFactor,codingParams,LRMS)
 
         for iCh in range(codingParams.nChannels):
             # overlap-and-add first half, and append it to the data array (saving other half for next overlap-and-add)

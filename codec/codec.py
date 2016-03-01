@@ -49,6 +49,7 @@ def Decode(scaleFactor,bitAlloc,mantissa,overallScaleFactor,codingParams,LRMS):
             lowLine = codingParams.sfBands.lowerLine[iBand]
             highLine = codingParams.sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
 
+            # Reconstruction, L=M-S and R=M+S
             mdctLineL[lowLine:highLine]=mdctLine[0][lowLine:highLine]-mdctLine[1][lowLine:highLine]
             mdctLineR[lowLine:highLine]=mdctLine[0][lowLine:highLine]+mdctLine[1][lowLine:highLine]
 
