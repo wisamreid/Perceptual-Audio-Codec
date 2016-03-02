@@ -177,6 +177,9 @@ def BitAlloc(bitBudget, maxMantBits, nBands, nLines, SMR):
             if (noise_floor==negative_infinity * ones(nBands)).all():
                 break
 
+            elif max(noise_floor)<-90:
+                break
+
             max_smr_band = argmax(noise_floor)
 
             if allocation[max_smr_band] < maxMantBits and (remaining_bits - nLines[max_smr_band]) >= 0:
