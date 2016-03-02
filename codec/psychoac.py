@@ -380,13 +380,17 @@ def calcBTHR(data, MDCTdata, MDCTscale, sampleRate, sfBands):
     """
     ####### Helper function:  getStereoMaskThreshold #######
 
-    data: Audio data (per channel) [L, R]
-    MDCTdata: MDCT lines (per channel)
-    MDCTscale: scale factor (per channel)
-    sampleRate: FS
-    sfBands: Scale factor bands (shared)
+    data:
 
-    Return: Masked Threshold evaluated at MDCT lines.
+            data: Audio (per channel) [L, R]
+            MDCTdata: MDCT lines (per channel)
+            MDCTscale: scale factor (per channel)
+            sampleRate: FS
+            sfBands: Scale factor bands (shared)
+
+    Return:
+
+            Masked Threshold evaluated at MDCT lines.
     """
 
     N = len(data)
@@ -462,7 +466,7 @@ def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
                 SMRs[channel].append(-96.0)
 
             else:
-                
+
                 SMRs[channel].append(np.amax(bandSMR))
 
     return SMRs
@@ -485,7 +489,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
             SMR[channel][nBands] Masked Threshold evaluated at MDCT lines.
     """
 
-    print_thresh = False
+    print_thresh = True
 
     ################ L/R SMR calculation ################
 
@@ -542,43 +546,47 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
 
     if print_thresh:
 
-        # plot L/R SPL, curve, and SMR
         plt.figure(1)
+        # plot L/R SPL, curve, and SMR
+
         plt.subplot(211)
+        plt.title('SPL of MDCT, LR masking curve and SMRs')
         pltMDCT, = plt.semilogx( MDCT_Spl_LR[0], 'k')
-        pltThresh, = plt.semilogx(BTHR_LR[0], 'r')
-        plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.6)
+        pltThresh, = plt.semilogx(BTHR_LR[0], 'r--')
+        plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.5, color="green")
         plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Overall Masking Threshold"])
         plt.xlabel('Frequency (Hz)')
-        plt.ylabel('left channel SPL (dB)')
-        plt.title('SPL of MDCT encoded as left and right with masking curve and SMRs')
+        plt.ylabel('L channel: SPL [dB]')
+
         plt.subplot(212)
         plt.semilogx(MDCT_Spl_LR[1], 'k')
         plt.semilogx(BTHR_LR[1], 'r')
-        plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.6)
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('right channel SPL (dB)')
+        plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.5, color="green")
+        plt.xlabel('Freq (Hz)')
+        plt.ylabel('R channel: SPL [dB]')
 
-        # plot M/S SPL, curve, and SMR
         plt.figure(2)
+        # plot M/S SPL, curve, and SMR
+
         plt.subplot(211)
+        plt.title('SPL of MDCT, MS masking curve and SMRs')
         pltMDCT, = plt.semilogx(MDCT_Spl_MS[0], 'k')
-        pltThresh, = plt.semilogx( THR_MS[0], 'r' )
-        plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.6)
+        pltThresh, = plt.semilogx( THR_MS[0], 'r--' )
+        plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.5, color="green")
         plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Overall Masking Threshold"])
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('mid channel SPL (dB)')
-        plt.title('SPL of MDCT encoded as mid and side with masking curve and SMRs')
+        plt.xlabel('Freq (Hz)')
+        plt.ylabel('M channel: SPL (dB)')
+
         plt.subplot(212)
         plt.semilogx( MDCT_Spl_MS[1], 'k' )
         plt.semilogx(THR_MS[1], 'r' )
-        plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.6)
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('side channel SPL (dB)')
+        plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.5, color="green")
+        plt.xlabel('Freq (Hz)')
+        plt.ylabel('S channel: SPL (dB)')
 
         plt.show()
 
-    # raw_input('Press enter to go to the next block... BRAH')
+    raw_input('Press enter to go to the next block... BRAH')
 
     ################ create final SMR array ################
 
@@ -601,7 +609,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
                 SMR[channel][line] = SMR_LR[channel][line]
                 # take L/R lines
                 LRMSmdctLines[channel][lowLine:highLine] = MDCTdata[channel][lowLine:highLine]
-    
+
     return SMR,LRMSmdctLines
 
 if __name__ == '__main__':
