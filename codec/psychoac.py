@@ -489,7 +489,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
             SMR[channel][nBands] Masked Threshold evaluated at MDCT lines.
     """
 
-    print_thresh = True
+    print_thresh = False
 
     ################ L/R SMR calculation ################
 
@@ -586,7 +586,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
 
         plt.show()
 
-    raw_input('Press enter to go to the next block... BRAH')
+    # raw_input('Press enter to go to the next block... BRAH')
 
     ################ create final SMR array ################
 
