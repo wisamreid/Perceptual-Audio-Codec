@@ -152,35 +152,25 @@ def BitAlloc(bitBudget, maxMantBits, nBands, nLines, SMR):
            rounding of the above equation to integer values of R(i).
     """
 
-    bitsEachLineInBand = np.zeros_like(nLines)
-    avgSMR = sum(nLines*SMR)/sum(nLines)
-    for i in range(nBands):
-        R = float(bitBudget)/sum(nLines) + 1.0 * (SMR[i] - avgSMR)/6.0
-        if R<2:
-            R = 0
-        if R>maxMantBits:
-            R = maxMantBits
-        bitsEachLineInBand[i] = int(R)
-    ##  Take bits back to meet the budget if overshoot ##
-    totalBits = sum(bitsEachLineInBand * nLines)
-    mySMR = SMR*np.ones(nBands)
-    while True:
-        if(mySMR==1e9*np.ones(nBands)).all():
-            break
-        minSMRIndex = np.argmin(mySMR)
-        if(totalBits>=bitBudget):
-            mySMR[minSMRIndex] = mySMR[minSMRIndex] + 6.0
-            if(bitsEachLineInBand[minSMRIndex]!=0):
-                bitsEachLineInBand[minSMRIndex] -= 1
-                if (bitsEachLineInBand[minSMRIndex] == 1):
-                    bitsEachLineInBand[minSMRIndex] = 0
-            totalBits = sum(bitsEachLineInBand * nLines)
-            if(bitsEachLineInBand[minSMRIndex]==0):
-                mySMR[minSMRIndex] = 1e9
-        else:
-            mySMR[minSMRIndex] = 1e9
-    return bitsEachLineInBand
+    bits = np.zeros(nBands, dtype=int)
+    valid = np.ones(nBands, dtype=bool)
 
+    while valid.any():
+        iMax = np.arange(nBands)[valid][np.argmax((SMR-bits*6.)[valid])]
+        # print max(SMR-bits*6.)
+        if max(SMR-bits*6.)<(-45): break
+        if (bitBudget - nLines[iMax]) >=0:
+            bits[iMax] += 1
+            bitBudget -= nLines[iMax]
+            if bits[iMax] >= maxMantBits:
+                valid[iMax] = False
+        else:
+            valid[iMax] = False
+    
+    bits[bits==1]=0
+
+    # raw_input('wait')
+    return bits
 
 
 #-----------------------------------------------------------------------------
