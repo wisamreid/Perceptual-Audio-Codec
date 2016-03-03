@@ -201,7 +201,7 @@ def EncodeDualChannel(data,codingParams,LRMS):
 
     # compute the mantissa bit allocations
     # compute SMRs in side chain FFT
-    (SMRs,LRMSmdctLines) = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, LRMS)
+    (SMRs,LRMSmdctLines) = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, LRMS, codingParams)
 
     bitAlloc=[]
     scaleFactor=[]

@@ -9,6 +9,7 @@ Author: Wisam Reid
 from numpy import *
 from window import *
 from mdct import *
+# from abbreviations import *
 
 def SPL(intensity):
     """
@@ -339,6 +340,35 @@ def MLD(z):
 
     MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
 
+    # normalize
+    MLD = MLD/np.amax(MLD)
+
+    return MLD
+
+def MLD_F(f):
+    """
+    Calculate the masking level difference factors for z
+
+    Arguments:
+
+            z: Bark frequencies
+
+    Returns:
+
+            An array of MLD factors
+    """
+    a = 1.25
+    offset = 2.5
+    cutoff = 3000
+    refactor = 200
+
+    MLD = np.zeros_like(f)
+
+    MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(f, cutoff)/cutoff) ) - offset))
+
+    # normalize
+    MLD = MLD/np.amax(MLD)
+
     return MLD
 
 def SPL_MDCT(data, window):
@@ -471,7 +501,7 @@ def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
 
     return SMRs
 
-def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS): # sendMS):
+def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS, codingParams): # sendMS):
     """
     Calculates the stereo masking theshold for M/S or L/R
 
@@ -488,24 +518,25 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
 
             SMR[channel][nBands] Masked Threshold evaluated at MDCT lines.
     """
-
-    print_thresh = False
+    # codingParams.curBlock = (codingParams.curBlock+1)%10
+    if codingParams.curBlock==1:
+        print_thresh = True
+    else:
+        print_thresh = False
+    # print_thresh = True
+    # print_thresh = False
 
     ################ L/R SMR calculation ################
 
+    # calculate MDCT SPL for L/R
+    MDCT_Spl_L = SPL(4.*MDCTdata[0]**2)-(6.02*MDCTscale[0]) #SPL_MDCT(MDCTdata[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data[0]))))
+    MDCT_Spl_R = SPL(4.*MDCTdata[1]**2)-(6.02*MDCTscale[1]) #SPL_MDCT(MDCTdata[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data[1]))))
+    MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
+
+    # calculate basic thresholds for LR
     BTHR_L = calcBTHR(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
     BTHR_R = calcBTHR(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
     BTHR_LR = [BTHR_L, BTHR_R]
-
-    # calculate MDCT SPL
-    # MDCT_Spl_L = SPL_MDCT(MDCTdata[0]*MDCTscale[0], SineWindow(np.ones(len(data[0]))))
-    # MDCT_Spl_R = SPL_MDCT(MDCTdata[1]*MDCTscale[1], SineWindow(np.ones(len(data[1]))))
-    MDCT_Spl_L = SPL_MDCT(MDCTdata[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data[0]))))
-    MDCT_Spl_R = SPL_MDCT(MDCTdata[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data[1]))))
-    MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
-
-    # get max SMRs for L/R
-    SMR_LR = calcStereoSMR(BTHR_LR, MDCT_Spl_LR, sfBands)
 
     ################ M/S SMR calculation ################
 
@@ -515,9 +546,14 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
     MDCT_data_MS = [(MDCTdata[0] + MDCTdata[1]) / 2.0, (MDCTdata[0] - MDCTdata[1]) / 2.0]
 
     # calculate MDCT SPL for M/S
-    MDCT_Spl_M = SPL_MDCT(MDCT_data_MS[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data_MS[0]))))
-    MDCTdataSplS = SPL_MDCT(MDCT_data_MS[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data_MS[1]))))
-    MDCT_Spl_MS = [MDCT_Spl_M, MDCTdataSplS]
+    MDCT_Spl_M = SPL(4.*MDCT_data_MS[0]**2)-(6.02*MDCTscale[0]) # SPL_MDCT(MDCT_data_MS[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data_MS[0]))))
+    MDCT_Spl_S = SPL(4.*MDCT_data_MS[1]**2)-(6.02*MDCTscale[1]) # SPL_MDCT(MDCT_data_MS[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data_MS[1]))))
+    MDCT_Spl_MS = [MDCT_Spl_M, MDCT_Spl_S]
+
+    # calculate basic thresholds for MS
+    BTHR_M = calcBTHR(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands)
+    BTHR_S = calcBTHR(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands)
+    BTHR_MS = [BTHR_M, BTHR_S]
 
     ################ calculate MLD ################
 
@@ -527,19 +563,25 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
     # get MLDs
     mld = []
     for freq in MDCT_freqs:
-        mld.append(MLD(Bark(freq)))
-    # normalize
-    mld = mld/np.amax(mld)
+        mld.append(MLD_F(freq))
 
-    # calculate basic thresholds for MS
-    BTHR_M = calcBTHR(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands)
-    BTHR_S = calcBTHR(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands)
+    # mld = np.concatenate((np.linspace(0.2,1,len(BTHR_L)/4), np.ones(3*len(BTHR_L)/4)))
+    # mld = np.ones(len(BTHR_S))
 
     # drop it low shorty
+    MLD_L = BTHR_L * mld
+    MLD_R = BTHR_R * mld
     MLD_M = BTHR_M * mld
     MLD_S = BTHR_S * mld
 
-    THR_MS = [np.maximum(BTHR_M, np.minimum(BTHR_S, MLD_S)), np.maximum(BTHR_S, np.minimum(BTHR_M, MLD_M))]
+    # calculate actual threshold for LR and MS
+    THR_LR = [np.minimum(MLD_L,np.maximum(BTHR_L,BTHR_R)), np.minimum(MLD_R,np.maximum(BTHR_L,BTHR_R))]
+    THR_MS = [np.minimum(MLD_M,np.maximum(BTHR_M,BTHR_S)), np.minimum(MLD_S,np.maximum(BTHR_M,BTHR_S))]
+    # THR_LR = [np.maximum(BTHR_L, np.minimum(BTHR_R, MLD_R)), np.maximum(BTHR_R, np.minimum(BTHR_L, MLD_L))]
+    # THR_MS = [np.maximum(BTHR_M, np.minimum(BTHR_S, MLD_S)), np.maximum(BTHR_S, np.minimum(BTHR_M, MLD_M))]
+
+    # get max SMRs for L/R
+    SMR_LR = calcStereoSMR(THR_LR, MDCT_Spl_LR, sfBands)
 
     # get max SMRs for M/S
     SMR_MS = calcStereoSMR(THR_MS, MDCT_Spl_MS, sfBands)
@@ -552,15 +594,17 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
         plt.subplot(211)
         plt.title('SPL of MDCT, LR masking curve and SMRs')
         pltMDCT, = plt.semilogx( MDCT_Spl_LR[0], 'k')
-        pltThresh, = plt.semilogx(BTHR_LR[0], 'r--')
+        pltBthresh, = plt.semilogx(BTHR_LR[0], 'r')
+        pltThresh, = plt.semilogx(THR_LR[0], 'b--')
         plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.5, color="green")
-        plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Overall Masking Threshold"])
+        plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold","Actual threshold"])
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('L channel: SPL [dB]')
 
         plt.subplot(212)
         plt.semilogx(MDCT_Spl_LR[1], 'k')
         plt.semilogx(BTHR_LR[1], 'r')
+        plt.semilogx(THR_LR[1], 'b--')
         plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.5, color="green")
         plt.xlabel('Freq (Hz)')
         plt.ylabel('R channel: SPL [dB]')
@@ -571,22 +615,24 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS)
         plt.subplot(211)
         plt.title('SPL of MDCT, MS masking curve and SMRs')
         pltMDCT, = plt.semilogx(MDCT_Spl_MS[0], 'k')
-        pltThresh, = plt.semilogx( THR_MS[0], 'r--' )
+        pltBthresh, = plt.semilogx( BTHR_MS[0], 'r' )
+        pltThresh, = plt.semilogx( THR_MS[0], 'b--' )
         plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.5, color="green")
-        plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Overall Masking Threshold"])
+        plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold", "Actual Threshold"])
         plt.xlabel('Freq (Hz)')
         plt.ylabel('M channel: SPL (dB)')
 
         plt.subplot(212)
         plt.semilogx( MDCT_Spl_MS[1], 'k' )
-        plt.semilogx(THR_MS[1], 'r' )
+        plt.semilogx(BTHR_MS[1], 'r' )
+        plt.semilogx(THR_MS[1], 'b--' )
         plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.5, color="green")
         plt.xlabel('Freq (Hz)')
         plt.ylabel('S channel: SPL (dB)')
 
         plt.show()
 
-    # raw_input('Press enter to go to the next block... BRAH')
+        # raw_input('Press enter to go to the next block... BRAH')
 
     ################ create final SMR array ################
 
@@ -621,20 +667,61 @@ if __name__ == '__main__':
     test_problem1e = False
     test_problem1f = False
     test_problem1g = False
-    test_mld = False
+    test_mld = True
+    test_stereo_masks = False
 
     #### construct input signal ####
     FS = 48000.0
     N = 1024
-
-    freqs = (420, 530, 640, 840, 4200, 8400)
-    amps = (0.60, 0.11, 0.10, 0.08, 0.05, 0.03)
-
     n = arange(N, dtype=float)
-    x = zeros_like(n)
+    x_L = zeros_like(n)
+    x_R = zeros_like(n)
 
-    for i in range(len(freqs)):
-        x += amps[i] * cos(2 * pi * freqs[i] * n / FS)
+    freqs_L = (420, 530, 640, 840, 4200, 8400)
+    amps_L = (0.60, 0.11, 0.10, 0.08, 0.05, 0.03)
+
+    freqs_R = (420, 530, 640)
+    amps_R = (0.60, 0.11, 0.10)
+
+    for i in range(len(freqs_L)):
+        x_L += amps_L[i] * cos(2 * pi * freqs_L[i] * n / FS)
+
+    for i in range(len(freqs_R)):
+        x_R += amps_R[i] * cos(2 * pi * freqs_R[i] * n / FS)
+
+    sfBands = ScaleFactorBands( AssignMDCTLinesFromFreqLimits(N, FS) )
+
+    if True:
+        # MDCT Left
+        MDCT_data_Sine_L = MDCT(SineWindow(x_L), N / 2, N / 2)
+
+        # MDCT Right
+        MDCT_data_Sine_R = MDCT(SineWindow(x_R), N / 2, N / 2)
+
+        mdctLines = [MDCT_data_Sine_L,MDCT_data_Sine_R]
+        x=x_L,x_R
+
+        maxLine = []
+        overallScale = []
+        from quantize import ScaleFactor
+        from numpy import fft
+        for iCh in range(2):
+            # compute overall scale factor for this block and boost mdctLines using it
+            maxLine.append(np.max( np.abs(mdctLines[iCh]) ) )
+            overallScale.append(ScaleFactor(maxLine[iCh],4) ) #leading zeroes don't depend on nMantBits
+            mdctLines[iCh] *= (1<<overallScale[iCh])
+
+        # calc LRMS
+        LRMS=np.zeros(sfBands.nBands,dtype='int')
+        L=np.fft.fft(x[0])
+        R=np.fft.fft(x[1])
+        for iBand in range(sfBands.nBands):
+            lowLine = sfBands.lowerLine[iBand]
+            highLine = sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
+            LRMS[iBand] = sum(np.power(L[lowLine:highLine],2)-np.power(R[lowLine:highLine],2))<0.8*sum(np.power(L[lowLine:highLine],2)+np.power(R[lowLine:highLine],2))
+
+        # create masks
+        getStereoMaskThreshold(x, mdctLines, overallScale, FS, sfBands, LRMS, [])
 
     if test_problem1b:
 
@@ -700,8 +787,8 @@ if __name__ == '__main__':
         X_spl = SPL(8.0 / 3.0 * 4.0 / N ** 2 * abs(X) ** 2)
 
         # MDCT
-        pow_KBD = 1.0 / N * sum(KBDWindow(ones(N)))
-        MDCT_data_KBD = MDCT(KBDWindow(x), N / 2, N / 2)
+        pow_KBD = 1.0 / N * sum(SineWindow(ones(N)))
+        MDCT_data_KBD = MDCT(SineWindow(x), N / 2, N / 2)
         MDCT_scale = zeros_like(MDCT_data_KBD)
         mdct_PSD_KBD = (abs((2.0 ** MDCT_scale) * MDCT_data_KBD * N / 2) ** 2)
         mdct_SPL_KBD = SPL(8.0 * mdct_PSD_KBD / ((N ** 2) * pow_KBD))
@@ -711,7 +798,7 @@ if __name__ == '__main__':
         figure(figsize=(14, 6))
         semilogx(f, Thresh(f), 'g', label='Threshold in quiet')
         semilogx(f, X_spl, 'm', label='FFT - Hanning Window')
-        semilogx(MDCT_freqs, mdct_SPL_KBD, 'r', label='MDCT - KBD Window')
+        semilogx(MDCT_freqs, mdct_SPL_KBD, 'r', label='MDCT - Sine Window')
         xlabel('Frequency (Hz)')
         ylabel('SPL (dB)')
         xlim(50, FS / 2)
@@ -806,6 +893,7 @@ if __name__ == '__main__':
     if test_mld:
 
         print "---- Testing MLD function ----"
+        plt.figure(1)
         mld = MLD(Bark(np.linspace(0, 20000, 100)))
         # mld = mld/np.amax(mld)
         plt.plot(mld)
@@ -813,7 +901,22 @@ if __name__ == '__main__':
         plt.xlabel('Bark Frequency [z]')
         plt.ylabel('MLD(z)')
         plt.xlim(0,16.0)
-        plt.title('MLD Factor')
+        plt.title('MLD Factor in z')
         plt.show()
 
-    execfile('pacfile.py')
+        plt.figure(2)
+        mld = MLD_F(np.linspace(0, 20000, 200))
+        # mld = mld/np.amax(mld)
+        plt.semilogx(np.linspace(0, 20000, 200),mld)
+        plt.yscale('linear')
+        plt.xlabel('Linear Frequency [f]')
+        plt.ylabel('MLD(f)')
+        plt.xlim(0,20000)
+        plt.title('MLD Factor in f')
+        plt.show()
+
+        print mld[0:40]
+        # print shape(mld)
+
+
+    # execfile('pacfile.py')

@@ -160,7 +160,8 @@ def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
 
     while valid.any():
         iMax = np.arange(nBands)[valid][np.argmax((SMR-bits*6.)[valid])]
-        if max(SMR-(bits-1)*6.)<(-40.0): break
+        if max(SMR-(bits-1)*6.)<(-50.0): break
+        # print max(SMR-(bits-1)*6.)
         if (totalBits - nLines[iMax]) >=0:
             bits[iMax] += 1
             totalBits -= nLines[iMax]
