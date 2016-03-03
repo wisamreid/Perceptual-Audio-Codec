@@ -254,6 +254,7 @@ class PACFile(AudioFile):
         for iCh in range(codingParams.nChannels):
             priorBlock.append(np.zeros(codingParams.nMDCTLines,dtype=np.float64) )
         codingParams.priorBlock = priorBlock
+        codingParams.extraBits=0
         return
 
     def WriteDataBlock(self,data, codingParams):

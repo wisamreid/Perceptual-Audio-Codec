@@ -126,12 +126,13 @@ def BitAllocConstMNR(bitBudget, maxMantBits, nBands, nLines, SMR):
 
 
 # Question 1.c)
-def BitAlloc(bitBudget, maxMantBits, nBands, nLines, SMR):
+def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
     """
     Allocates bits to scale factor bands so as to flatten the NMR across the spectrum
 
        Arguments:
            bitBudget is total number of mantissa bits to allocate
+           extraBits is the amount of leftover bits from other blocks
            maxMantBits is max mantissa bits that can be allocated per line
            nBands is total number of scale factor bands
            nLines[nBands] is number of lines in each scale factor band
@@ -139,6 +140,7 @@ def BitAlloc(bitBudget, maxMantBits, nBands, nLines, SMR):
 
         Return:
             bits[nBands] is number of bits allocated to each scale factor band
+            bitDifference is the net gain/loss over the original bit budget
 
         Logic:
            Maximizing SMR over block gives optimization result that:
@@ -154,23 +156,25 @@ def BitAlloc(bitBudget, maxMantBits, nBands, nLines, SMR):
 
     bits = np.zeros(nBands, dtype=int)
     valid = np.ones(nBands, dtype=bool)
+    totalBits = bitBudget+extraBits
 
     while valid.any():
         iMax = np.arange(nBands)[valid][np.argmax((SMR-bits*6.)[valid])]
-        # print max(SMR-bits*6.)
-        if max(SMR-bits*6.)<(-45): break
-        if (bitBudget - nLines[iMax]) >=0:
+        if max(SMR-(bits-1)*6.)<(-40.0): break
+        if (totalBits - nLines[iMax]) >=0:
             bits[iMax] += 1
-            bitBudget -= nLines[iMax]
+            totalBits -= nLines[iMax]
             if bits[iMax] >= maxMantBits:
                 valid[iMax] = False
         else:
             valid[iMax] = False
-    
+
+    bitBudget+=sum(nLines[bits==1])
     bits[bits==1]=0
 
-    # raw_input('wait')
-    return bits
+    bitDifference=totalBits-extraBits
+
+    return bits,bitDifference
 
 
 #-----------------------------------------------------------------------------

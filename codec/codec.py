@@ -209,7 +209,9 @@ def EncodeDualChannel(data,codingParams,LRMS):
 
     # perform bit allocation using SMR results
     for iCh in range(codingParams.nChannels):
-        bitAlloc.append(BitAlloc(bitBudget, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs[iCh]))
+        ba,bitDifference=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs[iCh])
+        bitAlloc.append(ba)
+        codingParams.extraBits+=bitDifference
 
         # given the bit allocations, quantize the mdct lines in each band
         scaleFactor.append(np.empty(sfBands.nBands,dtype=np.int32))
