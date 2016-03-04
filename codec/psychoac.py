@@ -9,6 +9,7 @@ Author: Wisam Reid
 from numpy import *
 from window import *
 from mdct import *
+import solution.psychoac_ as sol
 # from abbreviations import *
 
 def SPL(intensity):
@@ -533,7 +534,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
 
     # calculate basic thresholds for LR
-    import solution.psychoac_ as sol
+    # import solution.psychoac_ as sol
     # BTHR_L = calcBTHR(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
     # BTHR_R = calcBTHR(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
     BTHR_L = sol.getMaskedThreshold(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)

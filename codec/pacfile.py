@@ -356,180 +356,102 @@ class PACFile(AudioFile):
 # Testing the full PAC coder
 if __name__=="__main__":
 
-    full=True;
+    import time
+    from pcmfile import * # to get access to WAV file handling
 
-    if full==True:
-        import time
-        from pcmfile import * # to get access to WAV file handling
 
-        # input_filename = "../inputs/castanets.wav"
+    test = [True, False, False, False, False]
+
+    coded_filename = "../coded/coded.wak"
+
+    if test[0]:
+        input_filename = "../inputs/castanets.wav"
+        output_filename = "../outputs/castanets.wav"
+
+    if test[1]:
+        input_filename = "../inputs/trumpet.wav"
+        output_filename = "../outputs/trumpet.wav"
+
+    if test[2]:
         input_filename = "../inputs/daft.wav"
-        # input_filename = "../inputs/german.wav"
-        # input_filename = "../inputs/harpsichord.wav"
-        # input_filename = "../inputs/trumpet.wav"
-        coded_filename = "../coded/daft.pac"
-        # output_filename = "../outputs/castanets.wav"
-        # output_filename = "../outputs/german.wav"
         output_filename = "../outputs/daft.wav"
-        # output_filename = "../outputs/harpsichord.wav"
-        # output_filename = "../outputs/trumpet.wav"
 
-        if len(sys.argv) > 1:
-            input_filename = sys.argv[1]
-            coded_filename = sys.argv[1][:-4] + ".pac"
-            output_filename = sys.argv[1][:-4] + "_decoded.wav"
+    if test[3]:
+         output_filename = "../outputs/harpsichord.wav"
+         input_filename = "../inputs/harpsichord.wav"
 
+    if test[4]:
+        input_filename = "../inputs/german.wav"
+        output_filename = "../outputs/german.wav"
 
-        print "\nRunning the PAC coder ({} -> {} -> {}):".format(input_filename, coded_filename, output_filename)
-        elapsed = time.time()
-
-        for Direction in ("Encode", "Decode"):
-        # for Direction in ("Decode"):
-
-            # create the audio file objects
-            if Direction == "Encode":
-                print "\n\tEncoding PCM file ({}) ...".format(input_filename),
-                inFile= PCMFile(input_filename)
-                outFile = PACFile(coded_filename)
-            else: # "Decode"
-                print "\n\tDecoding PAC file ({}) ...".format(coded_filename),
-                inFile = PACFile(coded_filename)
-                outFile= PCMFile(output_filename)
-            # only difference is file names and type of AudioFile object
-
-            # open input file
-            codingParams=inFile.OpenForReading()  # (includes reading header)
-
-            # pass parameters to the output file
-            if Direction == "Encode":
-                # set additional parameters that are needed for PAC file
-                # (beyond those set by the PCM file on open)
-                codingParams.nMDCTLines = 1024
-                codingParams.nScaleBits = 4
-                codingParams.nMantSizeBits = 4
-                codingParams.targetBitsPerSample = 2.27
-                # codingParams.targetBitsPerSample = 4.93
-
-                # tell the PCM file how large the block size is
-                codingParams.nSamplesPerBlock = codingParams.nMDCTLines
-            else: # "Decode"
-                # set PCM parameters (the rest is same as set by PAC file on open)
-                codingParams.bitsPerSample = 16
-            # only difference is in setting up the output file parameters
+    if len(sys.argv) > 1:
+        input_filename = "../inputs/" + sys.argv[1]
+        coded_filename = "../coded/" + sys.argv[1][:-4] + ".wak"
+        output_filename = "../outputs/" + sys.argv[1][:-4] + ".wav"
 
 
-            # open the output file
-            outFile.OpenForWriting(codingParams) # (includes writing header)
+    print "\nRunning the PAC coder ({} -> {} -> {}):".format(input_filename, coded_filename, output_filename)
+    elapsed = time.time()
 
-            # Read the input file and pass its data to the output file to be written
-            firstBlock = True  # when de-coding, we won't write the first block to the PCM file. This flag signifies that
-            while True:
-                data=inFile.ReadDataBlock(codingParams)
-                if not data: break  # we hit the end of the input file
+    for Direction in ("Encode", "Decode"):
+    # for Direction in ("Decode"):
 
-                # don't write the first PCM block (it corresponds to the half-block delay introduced by the MDCT)
-                if firstBlock and Direction == "Decode":
-                    firstBlock = False
-                    continue
+        # create the audio file objects
+        if Direction == "Encode":
+            print "\n\tEncoding PCM file ({}) ...".format(input_filename),
+            inFile= PCMFile(input_filename)
+            outFile = PACFile(coded_filename)
+        else: # "Decode"
+            print "\n\tDecoding PAC file ({}) ...".format(coded_filename),
+            inFile = PACFile(coded_filename)
+            outFile= PCMFile(output_filename)
+        # only difference is file names and type of AudioFile object
 
-                outFile.WriteDataBlock(data,codingParams)
-                sys.stdout.write(".")  # just to signal how far we've gotten to user
-                sys.stdout.flush()
-            # end loop over reading/writing the blocks
+        # open input file
+        codingParams=inFile.OpenForReading()  # (includes reading header)
 
-            # close the files
-            inFile.Close(codingParams)
-            outFile.Close(codingParams)
-        # end of loop over Encode/Decode
+        # pass parameters to the output file
+        if Direction == "Encode":
+            # set additional parameters that are needed for PAC file
+            # (beyond those set by the PCM file on open)
+            codingParams.nMDCTLines = 1024
+            codingParams.nScaleBits = 4
+            codingParams.nMantSizeBits = 4
+            codingParams.targetBitsPerSample = 2.27
+            # codingParams.targetBitsPerSample = 4.93
 
-        elapsed = time.time()-elapsed
-        print "\nDone with Encode/Decode test\n"
-        print elapsed ," seconds elapsed"
-
-    else:
-        import time
-        from pcmfile import * # to get access to WAV file handling
-
-        # input_filename = "../inputs/castanets.wav"
-        input_filename = "../inputs/daft.wav"
-        # input_filename = "../inputs/german.wav"
-        # input_filename = "../inputs/harpsichord.wav"
-        # input_filename = "../inputs/trumpet.wav"
-        coded_filename = "../coded/daft.pac"
-        # output_filename = "../outputs/castanets.wav"
-        # output_filename = "../outputs/german.wav"
-        output_filename = "../outputs/daft.wav"
-        # output_filename = "../outputs/harpsichord.wav"
-        # output_filename = "../outputs/trumpet.wav"
-
-        if len(sys.argv) > 1:
-            input_filename = sys.argv[1]
-            coded_filename = sys.argv[1][:-4] + ".pac"
-            output_filename = sys.argv[1][:-4] + "_decoded.wav"
+            # tell the PCM file how large the block size is
+            codingParams.nSamplesPerBlock = codingParams.nMDCTLines
+        else: # "Decode"
+            # set PCM parameters (the rest is same as set by PAC file on open)
+            codingParams.bitsPerSample = 16
+        # only difference is in setting up the output file parameters
 
 
-        print "\nRunning the PAC coder ({} -> {} -> {}):".format(input_filename, coded_filename, output_filename)
-        elapsed = time.time()
+        # open the output file
+        outFile.OpenForWriting(codingParams) # (includes writing header)
 
-        # for Direction in ("Encode", "Decode"):
-        for Direction in ("Decode"):
+        # Read the input file and pass its data to the output file to be written
+        firstBlock = True  # when de-coding, we won't write the first block to the PCM file. This flag signifies that
+        while True:
+            data=inFile.ReadDataBlock(codingParams)
+            if not data: break  # we hit the end of the input file
 
-            # create the audio file objects
-            if Direction == "Encode":
-                print "\n\tEncoding PCM file ({}) ...".format(input_filename),
-                inFile= PCMFile(input_filename)
-                outFile = PACFile(coded_filename)
-            else: # "Decode"
-                print "\n\tDecoding PAC file ({}) ...".format(coded_filename),
-                inFile = PACFile(coded_filename)
-                outFile= PCMFile(output_filename)
-            # only difference is file names and type of AudioFile object
+            # don't write the first PCM block (it corresponds to the half-block delay introduced by the MDCT)
+            if firstBlock and Direction == "Decode":
+                firstBlock = False
+                continue
 
-            # open input file
-            codingParams=inFile.OpenForReading()  # (includes reading header)
+            outFile.WriteDataBlock(data,codingParams)
+            sys.stdout.write(".")  # just to signal how far we've gotten to user
+            sys.stdout.flush()
+        # end loop over reading/writing the blocks
 
-            # pass parameters to the output file
-            if Direction == "Encode":
-                # set additional parameters that are needed for PAC file
-                # (beyond those set by the PCM file on open)
-                codingParams.nMDCTLines = 1024
-                codingParams.nScaleBits = 4
-                codingParams.nMantSizeBits = 4
-                codingParams.targetBitsPerSample = 2.27
-                # codingParams.targetBitsPerSample = 4.93
+        # close the files
+        inFile.Close(codingParams)
+        outFile.Close(codingParams)
+    # end of loop over Encode/Decode
 
-                # tell the PCM file how large the block size is
-                codingParams.nSamplesPerBlock = codingParams.nMDCTLines
-            else: # "Decode"
-                # set PCM parameters (the rest is same as set by PAC file on open)
-                codingParams.bitsPerSample = 16
-            # only difference is in setting up the output file parameters
-
-
-            # open the output file
-            outFile.OpenForWriting(codingParams) # (includes writing header)
-
-            # Read the input file and pass its data to the output file to be written
-            firstBlock = True  # when de-coding, we won't write the first block to the PCM file. This flag signifies that
-            while True:
-                data=inFile.ReadDataBlock(codingParams)
-                if not data: break  # we hit the end of the input file
-
-                # don't write the first PCM block (it corresponds to the half-block delay introduced by the MDCT)
-                if firstBlock and Direction == "Decode":
-                    firstBlock = False
-                    continue
-
-                outFile.WriteDataBlock(data,codingParams)
-                sys.stdout.write(".")  # just to signal how far we've gotten to user
-                sys.stdout.flush()
-            # end loop over reading/writing the blocks
-
-            # close the files
-            inFile.Close(codingParams)
-            outFile.Close(codingParams)
-        # end of loop over Encode/Decode
-
-        elapsed = time.time()-elapsed
-        print "\nDone with Encode/Decode test\n"
-        print elapsed ," seconds elapsed"
+    elapsed = time.time()-elapsed
+    print "\nDone with Encode/Decode test\n"
+    print elapsed ," seconds elapsed"
