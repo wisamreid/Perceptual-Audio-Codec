@@ -659,27 +659,27 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
 
     ################ create final SMR array ################
 
-    SMR = np.zeros_like(SMR_MS)
-    LRMSmdctLines = np.zeros_like(MDCT_Spl_MS)
-    # band by band take M/S or L/R
-    for channel in range(2):
+    # SMR = np.zeros_like(SMR_MS)
+    # LRMSmdctLines = np.zeros_like(MDCT_Spl_MS)
+    # # band by band take M/S or L/R
+    # for channel in range(2):
+    #
+    #     for line in range(sfBands.nBands):
+    #         lowLine = sfBands.lowerLine[line]
+    #         highLine = sfBands.upperLine[line] + 1
+    #
+    #         if LRMS[line]:
+    #             # take M/S SMR
+    #             SMR[channel][line] = SMR_MS[channel][line]
+    #             # take M/S lines
+    #             LRMSmdctLines[channel][lowLine:highLine] = MDCT_data_MS[channel][lowLine:highLine]
+    #         else:
+    #             # take L/R SMR
+    #             SMR[channel][line] = SMR_LR[channel][line]
+    #             # take L/R lines
+    #             LRMSmdctLines[channel][lowLine:highLine] = MDCTdata[channel][lowLine:highLine]
 
-        for line in range(sfBands.nBands):
-            lowLine = sfBands.lowerLine[line]
-            highLine = sfBands.upperLine[line] + 1
-
-            if LRMS[line]:
-                # take M/S SMR
-                SMR[channel][line] = SMR_MS[channel][line]
-                # take M/S lines
-                LRMSmdctLines[channel][lowLine:highLine] = MDCT_data_MS[channel][lowLine:highLine]
-            else:
-                # take L/R SMR
-                SMR[channel][line] = SMR_LR[channel][line]
-                # take L/R lines
-                LRMSmdctLines[channel][lowLine:highLine] = MDCTdata[channel][lowLine:highLine]
-
-    return SMR,LRMSmdctLines
+    return SMR_LR,SMR_MS,MDCTdata,MDCT_data_MS
 
 if __name__ == '__main__':
 

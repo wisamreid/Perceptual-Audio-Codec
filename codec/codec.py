@@ -79,7 +79,7 @@ def Encode(data,codingParams):
         highLine = sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
         LRMS[iBand] = abs(sum(np.power(L[lowLine:highLine],2)-np.power(R[lowLine:highLine],2)))<0.8*abs(sum(np.power(L[lowLine:highLine],2)+np.power(R[lowLine:highLine],2)))
 
-    # LRMS=np.zeros(sfBands.nBands,dtype='int')
+    # LRMS=np.ones(sfBands.nBands,dtype='int')
     # LRMS[sfBands.nBands-4:]=0
 
     (scaleFactor,bitAlloc,mantissa,overallScaleFactor)=EncodeDualChannel(data,codingParams,LRMS)
@@ -204,17 +204,39 @@ def EncodeDualChannel(data,codingParams,LRMS):
 
     # compute the mantissa bit allocations
     # compute SMRs in side chain FFT
-    (SMRs,LRMSmdctLines) = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, LRMS, codingParams)
+    SMRlr,SMRms,MDCTlr,MDCTms = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, LRMS, codingParams)
 
     bitAlloc=[]
+    bitDifference=[]
     scaleFactor=[]
     mantissa=[]
 
     # perform bit allocation using SMR results
     for iCh in range(codingParams.nChannels):
-        ba,bitDifference=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs[iCh], LRMS)
+        ba,bd=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRlr[iCh])
         bitAlloc.append(ba)
-        codingParams.extraBits+=bitDifference
+        bitDifference.append(bd)
+
+    for iCh in range(codingParams.nChannels):
+        ba,bd=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRms[iCh])
+        bitAlloc.append(ba)
+        bitDifference.append(bd)
+
+    LRsum = bitAlloc[0]+bitAlloc[1]
+    MSsum = bitAlloc[2]+bitAlloc[3]
+
+    LRMSmdctLines = MDCTlr
+
+    for iBand in range(sfBands.nBands):
+        lowLine = sfBands.lowerLine[iBand]
+        highLine = sfBands.upperLine[iBand] + 1
+        if LRsum[iBand] >= MSsum[iBand]:
+            LRMSmdctLines[:][lowLine:highLine] = MDCTms[:][lowLine:highLine]
+            bitAlloc[0][iBand]=bitAlloc[2][iBand]
+            bitAlloc[1][iBand]=bitAlloc[3][iBand]
+
+    for iCh in range(codingParams.nChannels):
+        # codingParams.extraBits+=bitDifference
 
         # given the bit allocations, quantize the mdct lines in each band
         scaleFactor.append(np.empty(sfBands.nBands,dtype=np.int32))

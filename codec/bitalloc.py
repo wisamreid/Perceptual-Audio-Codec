@@ -126,7 +126,7 @@ def BitAllocConstMNR(bitBudget, maxMantBits, nBands, nLines, SMR):
 
 
 # Question 1.c)
-def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR, LRMS):
+def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
     """
     Allocates bits to scale factor bands so as to flatten the NMR across the spectrum
 
@@ -157,15 +157,10 @@ def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR, LRMS):
     bits = np.zeros(nBands, dtype=int)
     valid = np.ones(nBands, dtype=bool)
     totalBits = int(bitBudget+extraBits)
-    MS_Threshold = -5.
-    LR_Threshold = -15.
 
     while valid.any():
         iMax = np.arange(nBands)[valid][np.argmax((SMR-bits*6.)[valid])]
-        if LRMS[iMax]: # MS
-            if max(SMR-(bits-1)*6.)<(-5.0): valid[iMax] = False
-        else: # LR
-            if max(SMR-(bits-1)*6.)<(-15.0): valid[iMax] = False
+        if max(SMR-(bits-1)*6.)<(-15.0): valid[iMax] = False
         # print max(SMR-(bits-1)*6.)
         if (totalBits - nLines[iMax]) >=0:
             bits[iMax] += 1
@@ -175,7 +170,7 @@ def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR, LRMS):
         else:
             valid[iMax] = False
 
-    if max(SMR-(bits-1)*6.)<((MS_Threshold+LR_Threshold)/2.): print '*'
+    if max(SMR-(bits-1)*6.)<(-15.): print '*'
     totalBits+=sum(nLines[bits==1])
     bits[bits==1]=0
 
