@@ -9,8 +9,6 @@ Author: Wisam Reid
 from numpy import *
 from window import *
 from mdct import *
-import solution.psychoac_ as sol
-# from abbreviations import *
 
 def SPL(intensity):
     """
@@ -212,139 +210,34 @@ class ScaleFactorBands:
         self.upperLine = self.lowerLine + nLines
         self.upperLine = add(self.nLines, subtract(self.lowerLine, 1))
 
-def getMaskedThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands):
-    """
-    Return Masked Threshold evaluated at MDCT lines.
-
-    Used by CalcSMR, but can also be called from outside this module, which may
-    be helpful when debugging the bit allocation code.
-    """
-
-    N = len(data)
-    nMDCTLines = len(MDCTdata)
-    X_fft = fft.fft(HanningWindow(data))[0:N/2]
-    alpha = 1.0
-
-    masked_intensity = zeros_like(MDCTdata)
-
-    # shift by 0.5 samples
-    MDCTFreqs = sampleRate / 2.0 / nMDCTLines * (arange(0, nMDCTLines) + 0.5)
-
-    # threshold in quiet
-    threshold_in_quiet = Intensity(Thresh(MDCTFreqs))**alpha
-
-    # Using JOS code written for 320A
-    estimated_peak_amplitudes, estimated_peak_frequencies, index = findpeaks(X_fft,sampleRate,N)
-
-    BW = 3
-    masker_spl = zeros(len(index), dtype=float64)
-    num_peaks = len(index)
-
-    # aggregate intensity across the peaks, create maskers, sum maskers
-    for i in range(num_peaks):
-        masker_spl[i] = SPL((8.0 / 3.0 * 4.0 / (N ** 2.0)) * sum(abs(X_fft[index[i] - BW:index[i] + BW])**2.0))
-        maskers = Masker(estimated_peak_frequencies[i],masker_spl[i],True)
-        masked_intensity += (maskers).vIntensityAtFreq(MDCTFreqs)**alpha
-
-    masked_intensity = (masked_intensity + threshold_in_quiet)**(1.0/alpha)
-
-    return  SPL(masked_intensity)
-
-def CalcSMRs(data, MDCTdata, MDCTscale, sampleRate, sfBands):
-    """
-    Set SMR for each critical band in sfBands.
-
-    Arguments:
-                data:       is an array of N time domain samples
-                MDCTdata:   is an array of N/2 MDCT frequency lines for the data
-                            in data which have been scaled up by a factor
-                            of 2^MDCT_scale
-                MDCT_scale:  is an overall scale factor for the set of MDCT
-                            frequency lines
-                sampleRate: is the sampling rate of the time domain samples
-                sfBands:    points to information about which MDCT frequency lines
-                            are in which scale factor band
-
-    Returns:
-                SMR[sfBands.nBands] is the maximum signal-to-mask ratio in each
-                                    scale factor band
-
-    Logic:
-                Performs an FFT of data[N] and identifies tonal and noise maskers.
-                Sums their masking curves with the hearing threshold at each MDCT
-                frequency location to the calculate absolute threshold at those
-                points. Then determines the maximum signal-to-mask ratio within
-                each critical band and returns that result in the SMR[] array.
-    """
-
-    test = False
-
-    # Transform the MDCT data into SPL and Scale down
-    # mdct_spl = SPL(4.0 * MDCTdata**2) - SPL(2.0**MDCTscale)
-
-    trueMDCTdata = MDCTdata / (2.0**MDCTscale)
-    MDCTIntensity = 4.0 * (trueMDCTdata**2.0)
-    mdct_spl = SPL(MDCTIntensity)
-
-    # get masking threshold
-    masking_threshold = getMaskedThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands)
-
-    ##### test plot #####
-    if test:
-        N = 1024
-        f = fftfreq(N, 1 / sampleRate)[0:N / 2]
-        figure(figsize=(14, 6))
-        semilogx(f + 0.5, masking_threshold, 'r', label='Masker')
-        semilogx(f + 0.5, mdct_spl, 'b', label='MDCT - Hanning Window')
-        xlabel('Frequency (Hz)')
-        ylabel('SPL (dB)')
-        xlim(50, FS / 2)
-        ylim(-50, 100) # change for resolution
-        grid()
-        title('Masking Curve: N = 1024')
-        legend(loc=2)
-        show()
-
-    # intialize smr's: default 0.0
-    smr = zeros(sfBands.nBands, dtype=float64)
-
-    # loop over nBands an assign max to smr
-    for iBand in range(sfBands.nBands):
-
-        if sfBands.lowerLine[iBand] < sfBands.upperLine[iBand]+1: # else already zero
-
-                smr[iBand] = np.max(mdct_spl[sfBands.lowerLine[iBand]:sfBands.upperLine[iBand]+1]- masking_threshold[sfBands.lowerLine[iBand]:sfBands.upperLine[iBand]+1])
-
-    return smr
-
 ###########################################################################
 ############################## Stereo Coding ##############################
 ###########################################################################
 
-### Calculate Masking level difference ###
-def MLD(z):
-    """
-    Calculate the masking level difference factors for z
-
-    Arguments:
-
-            z: Bark frequencies
-
-    Returns:
-
-            An array of MLD factors
-    """
-    a = 1.25
-    offset = 2.5
-
-    MLD = np.zeros_like(z)
-
-    MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
-
-    # normalize
-    MLD = MLD/np.amax(MLD)
-
-    return MLD
+# ### Calculate Masking level difference ###
+# def MLD(z):
+    # """
+    # Calculate the masking level difference factors for z
+    #
+    # Arguments:
+    #
+    #         z: Bark frequencies
+    #
+    # Returns:
+    #
+    #         An array of MLD factors
+    # """
+    # a = 1.25
+    # offset = 2.5
+    #
+    # MLD = np.zeros_like(z)
+    #
+    # MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
+    #
+    # # normalize
+    # MLD = MLD/np.amax(MLD)
+    #
+    # return MLD
 
 def MLD_F(f):
     """
@@ -370,41 +263,6 @@ def MLD_F(f):
     MLD = MLD/np.amax(MLD)
 
     return MLD
-
-def SPL_MDCT(data, window):
-    """
-    Compute SPL of MDCT data using a given window
-
-    Arguments:
-
-            data: MDCT data
-            window: window used on data
-
-    Returns:
-
-            array of normalized SPLs
-
-    """
-
-    windowN = len(window)
-    signal = np.absolute(data)
-    power = signal * signal * (windowN ** 2.0) / 4
-
-    scale = 8.0 / ((windowN ** 2.0) * (1.0 / windowN) * np.sum(windowN ** 2.0))
-
-    spls = []
-
-    for p in power:
-
-        if p != 0.0:
-
-            spls.append(max( 96.0 + 10.0 * np.log10(scale * p), -30))
-
-        else:
-
-            spls.append(max( 96.0 + 10.0 * np.log10(scale * np.spacing(1)), -30 ))
-
-    return np.asarray(spls)
 
 def calcBTHR(data, MDCTdata, MDCTscale, sampleRate, sfBands, noDrop):
     """
@@ -503,7 +361,7 @@ def calcStereoSMR(stereoThreshold, mdctSPL, sfBands):
 
     return SMRs
 
-def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS, codingParams): # sendMS):
+def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codingParams):
     """
     Calculates the stereo masking theshold for M/S or L/R
 
@@ -536,11 +394,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
 
     # calculate basic thresholds for LR
-    # import solution.psychoac_ as sol
     BTHR_L = calcBTHR(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands, False) # Has drop
     BTHR_R = calcBTHR(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands, False)
-    # BTHR_L = sol.getMaskedThreshold(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
-    # BTHR_R = sol.getMaskedThreshold(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
     THR_LR = [BTHR_L, BTHR_R]
 
     ################ M/S SMR calculation ################
@@ -560,8 +415,6 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     BTHR_S = calcBTHR(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands, False)
     BTHR_M_MLD = calcBTHR(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands, True) # No drop
     BTHR_S_MLD = calcBTHR(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands, True)
-    # BTHR_M = sol.getMaskedThreshold(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands)
-    # BTHR_S = sol.getMaskedThreshold(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands)
     BTHR_MS = [BTHR_M, BTHR_S]
 
     ################ calculate MLD ################
@@ -572,22 +425,11 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     # get MLDs
     mld = MLD_F(MDCT_freqs)
 
-    # print mld[0:40]
-    # mld = np.concatenate((np.linspace(0.2,1,len(BTHR_L)/4), np.ones(3*len(BTHR_L)/4)))
-    # mld = np.ones(len(BTHR_S))
-
     # drop it low shorty
-    # MLD_L = BTHR_L # * mld
-    # MLD_R = BTHR_R # * mld
     MLD_M = BTHR_M_MLD * mld
     MLD_S = BTHR_S_MLD * mld
 
-    # calculate actual threshold for LR and MS
-    # THR_LR = [np.minimum(MLD_L,np.maximum(BTHR_L,BTHR_R)), np.minimum(MLD_R,np.maximum(BTHR_L,BTHR_R))]
-    # THR_MS = [np.minimum(MLD_M,np.maximum(BTHR_M,BTHR_S)), np.minimum(MLD_S,np.maximum(BTHR_M,BTHR_S))]
-    # THR_LR = [np.maximum(BTHR_L, np.minimum(BTHR_R, MLD_R)), np.maximum(BTHR_R, np.minimum(BTHR_L, MLD_L))]
-    # THR_MS = [np.maximum(BTHR_M, np.minimum(BTHR_S, MLD_S)), np.maximum(BTHR_S, np.minimum(BTHR_M, MLD_M))]
-    # THR_LR = [BTHR_L, BTHR_R]
+    # calculate actual threshold for MS
     THR_MS = [np.maximum(BTHR_M, np.minimum(BTHR_S, MLD_S)), np.maximum(BTHR_S, np.minimum(BTHR_M, MLD_M))]
 
     # get max SMRs for L/R
@@ -607,8 +449,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
         # pltBthresh, = plt.semilogx(BTHR_LR[0], 'r')
         pltThresh, = plt.semilogx(THR_LR[0], 'b--')
         pltSMRL = plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.5, color="green")
-        for i in range(len(LRMS)):
-            if LRMS[i]: pltSMRL[i].set_color('r')
+        # for i in range(len(LRMS)):
+        #     if LRMS[i]: pltSMRL[i].set_color('r')
         # plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold","Actual threshold"])
         plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Actual threshold"])
         plt.xlabel('Frequency (Hz)')
@@ -620,8 +462,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
         # plt.semilogx(BTHR_LR[1], 'r')
         plt.semilogx(THR_LR[1], 'b--')
         pltSMRR = plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.5, color="green")
-        for i in range(len(LRMS)):
-            if LRMS[i]: pltSMRR[i].set_color('r')
+        # for i in range(len(LRMS)):
+        #     if LRMS[i]: pltSMRR[i].set_color('r')
         plt.xlabel('Freq (Hz)')
         plt.ylabel('R channel: SPL [dB]')
         plt.xlim((0,1024))
@@ -635,8 +477,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
         pltBthresh, = plt.semilogx( BTHR_MS[0], 'r' )
         pltThresh, = plt.semilogx( THR_MS[0], 'b--' )
         pltSMRM = plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.5, color="green")
-        for i in range(len(LRMS)):
-            if LRMS[i]: pltSMRM[i].set_color('r')
+        # for i in range(len(LRMS)):
+        #     if LRMS[i]: pltSMRM[i].set_color('r')
         plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold", "Actual Threshold"])
         plt.xlabel('Freq (Hz)')
         plt.ylabel('M channel: SPL (dB)')
@@ -647,8 +489,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
         plt.semilogx(BTHR_MS[1], 'r' )
         plt.semilogx(THR_MS[1], 'b--' )
         pltSMRS = plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.5, color="green")
-        for i in range(len(LRMS)):
-            if LRMS[i]: pltSMRS[i].set_color('r')
+        # for i in range(len(LRMS)):
+        #     if LRMS[i]: pltSMRS[i].set_color('r')
         plt.xlabel('Freq (Hz)')
         plt.ylabel('S channel: SPL (dB)')
         plt.xlim((0,1024))
@@ -656,28 +498,6 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
         plt.show()
 
         # raw_input('Press enter to go to the next block... BRAH')
-
-    ################ create final SMR array ################
-
-    # SMR = np.zeros_like(SMR_MS)
-    # LRMSmdctLines = np.zeros_like(MDCT_Spl_MS)
-    # # band by band take M/S or L/R
-    # for channel in range(2):
-    #
-    #     for line in range(sfBands.nBands):
-    #         lowLine = sfBands.lowerLine[line]
-    #         highLine = sfBands.upperLine[line] + 1
-    #
-    #         if LRMS[line]:
-    #             # take M/S SMR
-    #             SMR[channel][line] = SMR_MS[channel][line]
-    #             # take M/S lines
-    #             LRMSmdctLines[channel][lowLine:highLine] = MDCT_data_MS[channel][lowLine:highLine]
-    #         else:
-    #             # take L/R SMR
-    #             SMR[channel][line] = SMR_LR[channel][line]
-    #             # take L/R lines
-    #             LRMSmdctLines[channel][lowLine:highLine] = MDCTdata[channel][lowLine:highLine]
 
     return SMR_LR,SMR_MS,MDCTdata,MDCT_data_MS
 

@@ -16,9 +16,6 @@ from quantize import *  # using vectorized versions (to use normal versions, unc
 # used only by Encode
 from psychoac import *  # calculates SMRs for each scale factor band
 from bitalloc import BitAlloc  #allocates bits to scale factor bands given SMRs
-# from bitalloc import BitAllocUniform
-# from bitalloc import BitAllocConstSNR
-# from bitalloc import BitAllocConstMNR
 
 def Decode(scaleFactor,bitAlloc,mantissa,overallScaleFactor,codingParams,LRMS):
     """Reconstitutes a single-channel block of encoded data into a block of
@@ -69,108 +66,14 @@ def Encode(data,codingParams):
     mantissa = []
     overallScaleFactor = []
 
-    # decide LR or MS
-    sfBands=codingParams.sfBands
-    LRMS=np.zeros(sfBands.nBands,dtype='int')
-    L=np.fft.fft(data[0])
-    R=np.fft.fft(data[1])
-    for iBand in range(sfBands.nBands):
-        lowLine = sfBands.lowerLine[iBand]
-        highLine = sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
-        LRMS[iBand] = abs(sum(np.power(L[lowLine:highLine],2)-np.power(R[lowLine:highLine],2)))<0.8*abs(sum(np.power(L[lowLine:highLine],2)+np.power(R[lowLine:highLine],2)))
-
-    # LRMS=np.ones(sfBands.nBands,dtype='int')
-    # LRMS[sfBands.nBands-4:]=0
-
-    (scaleFactor,bitAlloc,mantissa,overallScaleFactor)=EncodeDualChannel(data,codingParams,LRMS)
+    (scaleFactor,bitAlloc,mantissa,overallScaleFactor,LRMS)=EncodeDualChannel(data,codingParams)
 
     # Huffman here on mantissa
 
     # return results bundled over channels
     return (scaleFactor,bitAlloc,mantissa,overallScaleFactor,LRMS)
 
-def EncodeSingleChannel(data,codingParams):
-    """Encodes a single-channel block of signed-fraction data based on the parameters in a PACFile object"""
-
-    # prepare various constants
-    halfN = codingParams.nMDCTLines
-    # print halfN
-    # N = 2*halfN
-    # print N
-    nScaleBits = codingParams.nScaleBits
-    maxMantBits = (1<<codingParams.nMantSizeBits)  # 1 isn't an allowed bit allocation so n size bits counts up to 2^n
-    if maxMantBits>16: maxMantBits = 16  # to make sure we don't ever overflow mantissa holders
-    sfBands = codingParams.sfBands
-    # vectorizing the Mantissa function call
-    # vMantissa = np.vectorize(Mantissa)
-
-    # compute target mantissa bit budget for this block of halfN MDCT mantissas
-    bitBudget = codingParams.targetBitsPerSample * halfN  # this is overall target bit rate
-    bitBudget -=  nScaleBits*(sfBands.nBands +1)  # less scale factor bits (including overall scale factor)
-    bitBudget -= codingParams.nMantSizeBits*sfBands.nBands  # less mantissa bit allocation bits
-
-    # window data for side chain FFT and also window and compute MDCT
-    timeSamples = data
-    mdctTimeSamples = SineWindow(data)
-    mdctLines = MDCT(mdctTimeSamples, halfN, halfN)[:halfN]
-
-    # compute overall scale factor for this block and boost mdctLines using it
-    maxLine = np.max( np.abs(mdctLines) )
-    overallScale = ScaleFactor(maxLine,nScaleBits)  #leading zeroes don't depend on nMantBits
-    mdctLines *= (1<<overallScale)
-
-    # # compute SPLs
-    # bandPeaks=np.zeros(25)
-    # for i in np.arange(sfBands.nBands):
-    #     bandPeaks[i]=np.amax(mdctLines[sfBands.lowerLine[i]:sfBands.upperLine[i]])
-    # from psychoac import SPL
-    # bandPeaks=SPL(bandPeaks)
-
-    # compute the mantissa bit allocations
-    # compute SMRs in side chain FFT
-    SMRs = CalcSMRs(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands)
-
-    # perform bit allocation using SMR results
-    bitAlloc = BitAlloc(bitBudget, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs)
-    # bitAlloc = BitAllocUniform(bitBudget, maxMantBits, sfBands.nBands, sfBands.nLines)
-    # bitAlloc = BitAllocConstSNR(bitBudget, maxMantBits, sfBands.nBands, sfBands.nLines, bandPeaks)
-    # bitAlloc = BitAllocConstMNR(bitBudget, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs)
-
-    # given the bit allocations, quantize the mdct lines in each band
-    scaleFactor = np.empty(sfBands.nBands,dtype=np.int32)
-    nMant=halfN
-    # print nMant
-    for iBand in range(sfBands.nBands):
-        if not bitAlloc[iBand]: nMant-= sfBands.nLines[iBand]  # account for mantissas not being transmitted
-    # print nMant
-    mantissa=np.empty(nMant,dtype=np.int32)
-    iMant=0
-    for iBand in range(sfBands.nBands):
-        lowLine = sfBands.lowerLine[iBand]
-        highLine = sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
-        nLines= sfBands.nLines[iBand]
-        scaleLine = np.max(np.abs( mdctLines[lowLine:highLine] ) )
-        scaleFactor[iBand] = ScaleFactor(scaleLine, nScaleBits, bitAlloc[iBand])
-        if bitAlloc[iBand]:
-            # print len(mdctLines[lowLine:highLine])
-            # print scaleFactor[iBand]
-            # print nScaleBits
-            # print bitAlloc[iBand]
-            # print len(mantissa[iMant:iMant+nLines])
-            # output = vMantissa(mdctLines[lowLine:highLine],scaleFactor[iBand], nScaleBits, bitAlloc[iBand])
-            # print len(output)
-            # print iMant
-            # print nMant
-            # print nLines
-            # print '\n'
-            mantissa[iMant:iMant+nLines] = vMantissa(mdctLines[lowLine:highLine],scaleFactor[iBand], nScaleBits, bitAlloc[iBand])
-            iMant += nLines
-    # end of loop over scale factor bands
-
-    # return results
-    return (scaleFactor, bitAlloc, mantissa, overallScale)
-
-def EncodeDualChannel(data,codingParams,LRMS):
+def EncodeDualChannel(data,codingParams):
     """Encodes a single-channel block of signed-fraction data based on the parameters in a PACFile object"""
 
     # prepare various constants
@@ -204,7 +107,7 @@ def EncodeDualChannel(data,codingParams,LRMS):
 
     # compute the mantissa bit allocations
     # compute SMRs in side chain FFT
-    SMRlr,SMRms,MDCTlr,MDCTms = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, LRMS, codingParams)
+    SMRlr,SMRms,MDCTlr,MDCTms = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, codingParams)
 
     bitAlloc=[]
     bitDifference=[]
@@ -226,6 +129,7 @@ def EncodeDualChannel(data,codingParams,LRMS):
     MSsum = bitAlloc[2]+bitAlloc[3]
 
     LRMSmdctLines = MDCTlr
+    LRMS = np.zeros(sfBands.nBands,dtype=int)
 
     for iBand in range(sfBands.nBands):
         lowLine = sfBands.lowerLine[iBand]
@@ -234,6 +138,9 @@ def EncodeDualChannel(data,codingParams,LRMS):
             LRMSmdctLines[:][lowLine:highLine] = MDCTms[:][lowLine:highLine]
             bitAlloc[0][iBand]=bitAlloc[2][iBand]
             bitAlloc[1][iBand]=bitAlloc[3][iBand]
+            LRMS[iBand]=1
+
+    print LRMS
 
     for iCh in range(codingParams.nChannels):
         # codingParams.extraBits+=bitDifference
@@ -257,7 +164,7 @@ def EncodeDualChannel(data,codingParams,LRMS):
         # end of loop over scale factor bands
 
     # return results
-    return (scaleFactor, bitAlloc, mantissa, overallScale)
+    return (scaleFactor, bitAlloc, mantissa, overallScale, LRMS)
 
 if __name__=="__main__":
 
