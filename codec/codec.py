@@ -143,10 +143,10 @@ def EncodeDualChannel(data,codingParams):
     if plotBars[4]:
 
         for i in range(len(LRMS)):
-            if LRMS[i]: plotBars[0][i].set_color('r')
-            if LRMS[i]: plotBars[1][i].set_color('r')
-            if LRMS[i]: plotBars[2][i].set_color('r')
-            if LRMS[i]: plotBars[3][i].set_color('r')
+            if LRMS[i]: plotBars[0][i].set_color('b')
+            if LRMS[i]: plotBars[1][i].set_color('b')
+            if LRMS[i]: plotBars[2][i].set_color('b')
+            if LRMS[i]: plotBars[3][i].set_color('b')
         plt.show()
 
         raw_input('Press enter to go to the next block... BRAH')
@@ -158,8 +158,6 @@ def EncodeDualChannel(data,codingParams):
     codingParams.extraBits+=bitDifference
 
     print LRMS
-    print bitDifference
-    print codingParams.extraBits
 
     for iCh in range(codingParams.nChannels):
         # given the bit allocations, quantize the mdct lines in each band

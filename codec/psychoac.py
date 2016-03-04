@@ -379,12 +379,14 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
             SMR[channel][nBands] Masked Threshold evaluated at MDCT lines.
     """
 
-    # Comment and uncomment for block by block Threshold printing
-    codingParams.curBlock = (codingParams.curBlock+1)%10
+    # Comment and uncomment for block by block Threshold printing (Every tenth block)
+    # codingParams.curBlock = (codingParams.curBlock+1)%10
     if codingParams.curBlock==1:
         print_thresh = True
     else:
         print_thresh = False
+
+    # Comment and uncomment Threshold printing (Every block)
     # print_thresh = True
     # print_thresh = False
 
@@ -449,7 +451,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
         plt.subplot(211)
         plt.title('SPL of MDCT, LR masking curve and SMRs')
         pltMDCT, = plt.semilogx( MDCT_Spl_LR[0], 'k')
-        pltThresh, = plt.semilogx(THR_LR[0], 'b--')
+        pltThresh, = plt.semilogx(THR_LR[0], 'c--', linewidth=3.0)
         pltSMRL = plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.5, color="green")
         plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Actual threshold"])
         plt.xlabel('Frequency (Hz)')
@@ -458,7 +460,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
 
         plt.subplot(212)
         plt.semilogx(MDCT_Spl_LR[1], 'k')
-        plt.semilogx(THR_LR[1], 'b--')
+        plt.semilogx(THR_LR[1], 'c--', linewidth=3.0)
         pltSMRR = plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.5, color="green")
         plt.xlabel('Freq (Hz)')
         plt.ylabel('R channel: SPL [dB]')
@@ -470,8 +472,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
         plt.subplot(211)
         plt.title('SPL of MDCT, MS masking curve and SMRs')
         pltMDCT, = plt.semilogx(MDCT_Spl_MS[0], 'k')
-        pltBthresh, = plt.semilogx( BTHR_MS[0], 'r' )
-        pltThresh, = plt.semilogx( THR_MS[0], 'b--' )
+        pltBthresh, = plt.semilogx( BTHR_MS[0], 'r' , linewidth=3.0)
+        pltThresh, = plt.semilogx( THR_MS[0], 'c--', linewidth=3.0)
         pltSMRM = plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.5, color="green")
         plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold", "Actual Threshold"])
         plt.xlabel('Freq (Hz)')
@@ -480,8 +482,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
 
         plt.subplot(212)
         plt.semilogx( MDCT_Spl_MS[1], 'k' )
-        plt.semilogx(BTHR_MS[1], 'r' )
-        plt.semilogx(THR_MS[1], 'b--' )
+        plt.semilogx(BTHR_MS[1], 'r' , linewidth=3.0)
+        plt.semilogx(THR_MS[1], 'c--', linewidth=3.0 )
         pltSMRS = plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.5, color="green")
         plt.xlabel('Freq (Hz)')
         plt.ylabel('S channel: SPL (dB)')
@@ -735,7 +737,6 @@ if __name__ == '__main__':
         print "---- Testing MLD function ----"
         plt.figure(1)
         mld = MLD(Bark(np.linspace(0, 20000, 100)))
-        # mld = mld/np.amax(mld)
         plt.plot(mld)
         plt.yscale('linear')
         plt.xlabel('Bark Frequency [z]')
@@ -746,12 +747,11 @@ if __name__ == '__main__':
 
         plt.figure(2)
         mld = MLD_F(np.linspace(0, 20000, 200))
-        # mld = mld/np.amax(mld)
         plt.semilogx(np.linspace(0, 20000, 200),mld)
         plt.yscale('linear')
         plt.xlabel('Linear Frequency [f]')
         plt.ylabel('MLD(f)')
-        plt.xlim(0,20000)
+        plt.xlim(0,5000)
         plt.title('MLD Factor in f')
         plt.show()
 
