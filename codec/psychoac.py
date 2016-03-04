@@ -360,7 +360,6 @@ def MLD_F(f):
     a = 1.25
     offset = 2.5
     cutoff = 3000
-    refactor = 200
 
     MLD = np.zeros_like(f)
 
@@ -534,8 +533,11 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
 
     # calculate basic thresholds for LR
-    BTHR_L = calcBTHR(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
-    BTHR_R = calcBTHR(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
+    import solution.psychoac_ as sol
+    # BTHR_L = calcBTHR(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
+    # BTHR_R = calcBTHR(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
+    BTHR_L = sol.getMaskedThreshold(data[0], MDCTdata[0], MDCTscale[0], sampleRate, sfBands) #, False)
+    BTHR_R = sol.getMaskedThreshold(data[1], MDCTdata[1], MDCTscale[1], sampleRate, sfBands) #, False)
     BTHR_LR = [BTHR_L, BTHR_R]
 
     ################ M/S SMR calculation ################
@@ -551,8 +553,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, LRMS,
     MDCT_Spl_MS = [MDCT_Spl_M, MDCT_Spl_S]
 
     # calculate basic thresholds for MS
-    BTHR_M = calcBTHR(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands)
-    BTHR_S = calcBTHR(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands)
+    BTHR_M = sol.getMaskedThreshold(data_MS[0], MDCT_data_MS[0], MDCTscale[0], sampleRate, sfBands)
+    BTHR_S = sol.getMaskedThreshold(data_MS[1], MDCT_data_MS[0], MDCTscale[1], sampleRate, sfBands)
     BTHR_MS = [BTHR_M, BTHR_S]
 
     ################ calculate MLD ################
