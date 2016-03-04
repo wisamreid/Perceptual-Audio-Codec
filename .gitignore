@@ -206,3 +206,5 @@ pythontex-files-*/
 # Latexian Specific
 TSWLatexianTemp*
 *.pyc
+
+*.pyc
