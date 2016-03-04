@@ -1,4 +1,5 @@
-﻿"""
+# -*- coding:utf-8 -*-
+"""
 codec.py -- The actual encode/decode functions for the perceptual audio codec
 
 -----------------------------------------------------------------------
@@ -16,6 +17,7 @@ from quantize import *  # using vectorized versions (to use normal versions, unc
 # used only by Encode
 from psychoac import *  # calculates SMRs for each scale factor band
 from bitalloc import BitAlloc  #allocates bits to scale factor bands given SMRs
+from Huffman import *
 # from bitalloc import BitAllocUniform
 # from bitalloc import BitAllocConstSNR
 # from bitalloc import BitAllocConstMNR
@@ -62,13 +64,33 @@ def Decode(scaleFactor,bitAlloc,mantissa,overallScaleFactor,codingParams,LRMS):
     # end loop over channels, return reconstituted time samples (pre-overlap-and-add)
     return data
 
-def Encode(data,codingParams):
+def StripSignBits(codingParams,mantissa,bitAlloc):
+    signBits = []
+    unsignedMantissas = []
+    '''Strip off the sign bits of each mantissa'''
+    iMant=0
+    for iBand in range(codingParams.sfBands.nBands):
+        if bitAlloc[iBand]:
+            for j in range(codingParams.sfBands.nLines[iBand]):
+                form = '0' + str(bitAlloc[iBand]) + 'b'
+                mantString = format(mantissa[iMant+j],form)
+                signBits.append(int(mantString[0],2))
+                unsignedMantissas.append(int(mantString[1:],2))
+            iMant += codingParams.sfBands.nLines[iBand]
+
+    return (signBits, unsignedMantissas)
+
+def Encode(data,codingParams,huffman):
     """Encodes a multi-channel block of signed-fraction data based on the parameters in a PACFile object"""
     scaleFactor = []
     bitAlloc = []
     mantissa = []
     overallScaleFactor = []
-
+    '''Huffman variables'''
+    tableID = []
+    signBits = []
+    huffmanCodedMantissa = []
+    
     # decide LR or MS
     sfBands=codingParams.sfBands
     LRMS=np.zeros(sfBands.nBands,dtype='int')
@@ -82,12 +104,28 @@ def Encode(data,codingParams):
     # LRMS=np.zeros(sfBands.nBands,dtype='int')
     # LRMS[sfBands.nBands-4:]=0
 
-    (scaleFactor,bitAlloc,mantissa,overallScaleFactor)=EncodeDualChannel(data,codingParams,LRMS)
+    (scaleFactor,bitAlloc,mantissa,overallScaleFactor)=EncodeDualChannel(data,codingParams,LRMS,huffman)
 
     # Huffman here on mantissa
+    # loop over channels and separately encode each one
+    for iCh in range(codingParams.nChannels):
+        ''' Strip off sign bit before huffman ecoding '''
+        (sb, unsignedMantissas) = StripSignBits(codingParams,mantissa[iCh],bitAlloc[iCh])
+        ''' Place to add Huffman Encoding '''
+        (m,tID) = huffman.encodeData(codingParams,unsignedMantissas,bitAlloc[iCh])
+        ''' Calculate bits saved from huffman encoding and saved it for future block'''
+        originBitUsed = sum(bitAlloc[iCh]*codingParams.sfBands.nLines)
+        totalBitsUsedInHuffman = sum(len(huff) for huff in m)+ len(sb) + codingParams.nTableIDBits
+        huffman.depositBits(originBitUsed-totalBitsUsedInHuffman)
+        '''====Huffman trainer collecting symbols===='''
+        #huffman.countFreq(unsignedMantissas)
+        huffmanCodedMantissa.append(m)
+        tableID.append(tID)
+        signBits.append(sb)
 
     # return results bundled over channels
-    return (scaleFactor,bitAlloc,mantissa,overallScaleFactor,LRMS)
+
+    return (scaleFactor,bitAlloc,signBits,huffmanCodedMantissa,tableID,overallScaleFactor,LRMS)
 
 def EncodeSingleChannel(data,codingParams):
     """Encodes a single-channel block of signed-fraction data based on the parameters in a PACFile object"""
@@ -170,7 +208,7 @@ def EncodeSingleChannel(data,codingParams):
     # return results
     return (scaleFactor, bitAlloc, mantissa, overallScale)
 
-def EncodeDualChannel(data,codingParams,LRMS):
+def EncodeDualChannel(data,codingParams,LRMS,huffman):
     """Encodes a single-channel block of signed-fraction data based on the parameters in a PACFile object"""
 
     # prepare various constants
@@ -184,6 +222,10 @@ def EncodeDualChannel(data,codingParams,LRMS):
     bitBudget = codingParams.targetBitsPerSample * halfN  # this is overall target bit rate
     bitBudget -= nScaleBits*(sfBands.nBands +1)  # less scale factor bits (including overall scale factor)
     bitBudget -= codingParams.nMantSizeBits*sfBands.nBands  # less mantissa bit allocation bits
+    '''Subtract the bits needed for the table ID'''
+    bitBudget -= codingParams.nTableIDBits
+    '''Get extra bits saved from Huffman encoding to do bit alloc'''
+    #codingParams.extraBits += huffman.withdrawBits()
 
     timeSamples=[]
     mdctTimeSamples=[]
