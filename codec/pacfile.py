@@ -436,6 +436,7 @@ if __name__=="__main__":
             inFile= PCMFile(input_filename)
             outFile = PACFile(coded_filename)
         else: # "Decode"
+            print "Saved "+str(huffman.getBitDeposit())+" Bits!"
             print "\n\tDecoding PAC file ({}) ...".format(coded_filename),
             inFile = PACFile(coded_filename)
             outFile= PCMFile(output_filename)
@@ -497,7 +498,6 @@ if __name__=="__main__":
         inFile.Close(codingParams)
         outFile.Close(codingParams)
     # end of loop over Encode/Decode
-    print "Saved "+str(huffman.getBitDeposit())+" Bits!"
     elapsed = time.time()-elapsed
     print "\nDone with Encode/Decode test\n"
     print elapsed ," seconds elapsed"

@@ -113,6 +113,7 @@ def Encode(data,codingParams,huffman):
         (sb, unsignedMantissas) = StripSignBits(codingParams,mantissa[iCh],bitAlloc[iCh])
         ''' Place to add Huffman Encoding '''
         (m,tID) = huffman.encodeData(codingParams,unsignedMantissas,bitAlloc[iCh])
+        #print "Table Used: ", tID
         ''' Calculate bits saved from huffman encoding and saved it for future block'''
         originBitUsed = sum(bitAlloc[iCh]*codingParams.sfBands.nLines)
         totalBitsUsedInHuffman = sum(len(huff) for huff in m)+ len(sb) + codingParams.nTableIDBits
@@ -225,7 +226,7 @@ def EncodeDualChannel(data,codingParams,LRMS,huffman):
     '''Subtract the bits needed for the table ID'''
     bitBudget -= codingParams.nTableIDBits
     '''Get extra bits saved from Huffman encoding to do bit alloc'''
-    #codingParams.extraBits += huffman.withdrawBits()
+    codingParams.extraBits += huffman.withdrawBits()
 
     timeSamples=[]
     mdctTimeSamples=[]

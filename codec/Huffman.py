@@ -56,6 +56,7 @@ class Histogram:
          # Sort the block HistogramProb based on the mantissa code value for alignment
         sortedBlockHistogramProb = OrderedDict(sorted(blockHistogram.probability.items(),key=lambda t: t[0]))
         sortedBlockHistogramProb = np.array(sortedBlockHistogramProb.values())
+        #print "Block prob: ",sortedBlockHistogramProb
         difference = sum((sortedHistogramProb - sortedBlockHistogramProb)**2)
         return (3.0-difference)
         
@@ -168,6 +169,7 @@ class HuffmanTrainer:
     #----------------------------------------------------------#
     def __init__(self,tableID):
         self.tableID = tableID
+        self.histogram = Histogram()
 
     #----------------------------------------------------------#
     #. countFreq(mantissaCode)
@@ -270,28 +272,41 @@ class Huffman:
     #.          to encode the mantissa codes.
     #----------------------------------------------------------#
     def encodeData(self,codingParams,mantissaCode,bitAlloc):
-        huffmanCodedMantissa = []
+        bestHuffmanCodedMantissa = []
+        #totalBitLength = sum(bitAlloc*codingParams.sfBands.nLines)
+        bestTableID = 1
         # construct histogram for this block
-        blockHistogram = Histogram()
-        blockHistogram.generateStatistics(mantissaCode)
+        #blockHistogram = Histogram()
+        #blockHistogram.generateStatistics(mantissaCode)
         # find the best match huffman table
-        bestMatchTableID = self.__findBestMatchHuffmanTable(blockHistogram)
+        #bestMatchTableID = self.__findBestMatchHuffmanTable(blockHistogram)
         # encode the shit
-        huffmanTable = self.huffmanTables[bestMatchTableID]
-        iMant=0
-        for iBand in range(codingParams.sfBands.nBands):
-            if bitAlloc[iBand]:
-                for j in range(codingParams.sfBands.nLines[iBand]):
-                    code = mantissaCode[iMant+j]
-                    if code in huffmanTable.encodingTable.keys():
-                        huffmanCodedMantissa.append(huffmanTable.encodingTable[code])
-                    # If mantissa code not presented in table, use escape code and code the origin mantissa
-                    else:
-                        form = '0' + str(bitAlloc[iBand]) + 'b'
-                        mantString = format(code,form)
-                        huffmanCodedMantissa.append(huffmanTable.encodingTable[self.ESCAPE_CODE]+mantString)
-                iMant += codingParams.sfBands.nLines[iBand]
-        return (huffmanCodedMantissa,bestMatchTableID)
+        for ID in self.huffmanTables.keys():
+            huffmanCodedMantissa = []
+            huffmanTable = self.huffmanTables[ID]
+            iMant=0
+            for iBand in range(codingParams.sfBands.nBands):
+                if bitAlloc[iBand]:
+                    for j in range(codingParams.sfBands.nLines[iBand]):
+                        code = mantissaCode[iMant+j]
+                        if code in huffmanTable.encodingTable.keys():
+                            huffmanCodedMantissa.append(huffmanTable.encodingTable[code])
+                        # If mantissa code not presented in table, use escape code and code the origin mantissa
+                        else:
+                            form = '0' + str(bitAlloc[iBand]) + 'b'
+                            mantString = format(code,form)
+                            huffmanCodedMantissa.append(huffmanTable.encodingTable[self.ESCAPE_CODE]+mantString)
+                    iMant += codingParams.sfBands.nLines[iBand]
+            totalHuffmanBitLength = sum(len(huff) for huff in huffmanCodedMantissa)
+            if  ID == 1:
+                totalBitLength = totalHuffmanBitLength
+                bestHuffmanCodedMantissa = huffmanCodedMantissa
+                bestTableID = ID
+            if  totalHuffmanBitLength < totalBitLength:
+                totalBitLength = totalHuffmanBitLength
+                bestHuffmanCodedMantissa = huffmanCodedMantissa
+                bestTableID = ID
+        return (bestHuffmanCodedMantissa,bestTableID)
     
     #----------------------------------------------------------#
     #. decodeData(huffmanCode,tableID)
@@ -340,7 +355,7 @@ class Huffman:
 
     #----------------------------------------------------------#
     #. withdrawBits()
-    #. This function takes withdraws 5% of the bit deposit for
+    #. This function takes withdraws 1% of the bit deposit for
     #. bit re-allocation.
     #. @Param:  void
     #. @Return: a number of bits
@@ -348,7 +363,7 @@ class Huffman:
     def withdrawBits(self):
         extraBits = 0
         if self.bitDeposit > 10:
-            extraBits = self.bitDeposit/20
+            extraBits = self.bitDeposit/100
             self.bitDeposit -= extraBits
         return extraBits
 
@@ -363,13 +378,13 @@ class Huffman:
     #. @Param:  histogram of the block to be encode
     #. @Return: the best match huffman table ID
     #----------------------------------------------------------#
-    def __findBestMatchHuffmanTable(self,blockHistogram):
-        bestScore = 0
-        bestMatchTableID = 1
-        for ID, histogram in self.histograms.items():
-            if histogram.getMatchScore(blockHistogram) > bestScore:
-                bestMatchTableID = ID
-        return bestMatchTableID
+#    def __findBestMatchHuffmanTable(self,blockHistogram):
+#        bestScore = 0
+#        bestMatchTableID = 1
+#        for ID, histogram in self.histograms.items():
+#            if histogram.getMatchScore(blockHistogram) > bestScore:
+#                bestMatchTableID = ID
+#        return bestMatchTableID
 
 #------------------------------------------------------------------------#
 """---TESTING!----"""
