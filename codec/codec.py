@@ -107,7 +107,7 @@ def EncodeDualChannel(data,codingParams):
 
     # compute the mantissa bit allocations
     # compute SMRs in side chain FFT
-    SMRlr,SMRms,MDCTlr,MDCTms = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, codingParams)
+    SMRlr,SMRms,MDCTlr,MDCTms, plotBars = getStereoMaskThreshold(timeSamples, mdctLines, overallScale, codingParams.sampleRate, sfBands, codingParams)
 
     bitAlloc=[]
     bitDifference=[]
@@ -116,14 +116,12 @@ def EncodeDualChannel(data,codingParams):
 
     # perform bit allocation using SMR results
     for iCh in range(codingParams.nChannels):
-        ba,bd=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRlr[iCh])
+        ba=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRlr[iCh],-20.)
         bitAlloc.append(ba)
-        bitDifference.append(bd)
 
     for iCh in range(codingParams.nChannels):
-        ba,bd=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRms[iCh])
+        ba=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRms[iCh],-10.)
         bitAlloc.append(ba)
-        bitDifference.append(bd)
 
     LRsum = bitAlloc[0]+bitAlloc[1]
     MSsum = bitAlloc[2]+bitAlloc[3]
@@ -140,11 +138,30 @@ def EncodeDualChannel(data,codingParams):
             bitAlloc[1][iBand]=bitAlloc[3][iBand]
             LRMS[iBand]=1
 
+    ################ Begin Threshold Plots ################
+    # Change the color of the bar plots based on the LRMS
+    if plotBars[4]:
+
+        for i in range(len(LRMS)):
+            if LRMS[i]: plotBars[0][i].set_color('r')
+            if LRMS[i]: plotBars[1][i].set_color('r')
+            if LRMS[i]: plotBars[2][i].set_color('r')
+            if LRMS[i]: plotBars[3][i].set_color('r')
+        plt.show()
+
+        raw_input('Press enter to go to the next block... BRAH')
+
+    ################ End Threshold Plots ################
+
+    bitsUsed = sum((bitAlloc[0] + bitAlloc[1]) * sfBands.nLines)
+    bitDifference = bitBudget - bitsUsed
+    codingParams.extraBits+=bitDifference
+
     print LRMS
+    print bitDifference
+    print codingParams.extraBits
 
     for iCh in range(codingParams.nChannels):
-        # codingParams.extraBits+=bitDifference
-
         # given the bit allocations, quantize the mdct lines in each band
         scaleFactor.append(np.empty(sfBands.nBands,dtype=np.int32))
         nMant=halfN

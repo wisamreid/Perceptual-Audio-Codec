@@ -214,30 +214,30 @@ class ScaleFactorBands:
 ############################## Stereo Coding ##############################
 ###########################################################################
 
-# ### Calculate Masking level difference ###
-# def MLD(z):
-    # """
-    # Calculate the masking level difference factors for z
-    #
-    # Arguments:
-    #
-    #         z: Bark frequencies
-    #
-    # Returns:
-    #
-    #         An array of MLD factors
-    # """
-    # a = 1.25
-    # offset = 2.5
-    #
-    # MLD = np.zeros_like(z)
-    #
-    # MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
-    #
-    # # normalize
-    # MLD = MLD/np.amax(MLD)
-    #
-    # return MLD
+### Calculate Masking level difference ###
+def MLD(z):
+    """
+    Calculate the masking level difference factors for z
+
+    Arguments:
+
+            z: Bark frequencies
+
+    Returns:
+
+            An array of MLD factors
+    """
+    a = 1.25
+    offset = 2.5
+
+    MLD = np.zeros_like(z)
+
+    MLD = np.power(10.0, a * (1 - np.cos(np.pi * (np.minimum(z, 15.5)/15.5)) - offset))
+
+    # normalize
+    MLD = MLD/np.amax(MLD)
+
+    return MLD
 
 def MLD_F(f):
     """
@@ -378,7 +378,9 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
 
             SMR[channel][nBands] Masked Threshold evaluated at MDCT lines.
     """
-    # codingParams.curBlock = (codingParams.curBlock+1)%10
+
+    # Comment and uncomment for block by block Threshold printing
+    codingParams.curBlock = (codingParams.curBlock+1)%10
     if codingParams.curBlock==1:
         print_thresh = True
     else:
@@ -389,8 +391,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
     ################ L/R SMR calculation ################
 
     # calculate MDCT SPL for L/R
-    MDCT_Spl_L = SPL(4.*MDCTdata[0]**2)-(6.02*MDCTscale[0]) #SPL_MDCT(MDCTdata[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data[0]))))
-    MDCT_Spl_R = SPL(4.*MDCTdata[1]**2)-(6.02*MDCTscale[1]) #SPL_MDCT(MDCTdata[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data[1]))))
+    MDCT_Spl_L = SPL(4.*MDCTdata[0]**2)-(6.02*MDCTscale[0])
+    MDCT_Spl_R = SPL(4.*MDCTdata[1]**2)-(6.02*MDCTscale[1])
     MDCT_Spl_LR = [MDCT_Spl_L, MDCT_Spl_R]
 
     # calculate basic thresholds for LR
@@ -406,8 +408,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
     MDCT_data_MS = [(MDCTdata[0] + MDCTdata[1]) / 2.0, (MDCTdata[0] - MDCTdata[1]) / 2.0]
 
     # calculate MDCT SPL for M/S
-    MDCT_Spl_M = SPL(4.*MDCT_data_MS[0]**2)-(6.02*MDCTscale[0]) # SPL_MDCT(MDCT_data_MS[0]/(2.**MDCTscale[0]), SineWindow(np.ones(len(data_MS[0]))))
-    MDCT_Spl_S = SPL(4.*MDCT_data_MS[1]**2)-(6.02*MDCTscale[1]) # SPL_MDCT(MDCT_data_MS[1]/(2.**MDCTscale[1]), SineWindow(np.ones(len(data_MS[1]))))
+    MDCT_Spl_M = SPL(4.*MDCT_data_MS[0]**2)-(6.02*MDCTscale[0])
+    MDCT_Spl_S = SPL(4.*MDCT_data_MS[1]**2)-(6.02*MDCTscale[1])
     MDCT_Spl_MS = [MDCT_Spl_M, MDCT_Spl_S]
 
     # calculate basic thresholds for MS
@@ -438,6 +440,7 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
     # get max SMRs for M/S
     SMR_MS = calcStereoSMR(THR_MS, MDCT_Spl_MS, sfBands)
 
+    ################ Begin Threshold Plots ################
     if print_thresh:
 
         plt.figure(1)
@@ -446,12 +449,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
         plt.subplot(211)
         plt.title('SPL of MDCT, LR masking curve and SMRs')
         pltMDCT, = plt.semilogx( MDCT_Spl_LR[0], 'k')
-        # pltBthresh, = plt.semilogx(BTHR_LR[0], 'r')
         pltThresh, = plt.semilogx(THR_LR[0], 'b--')
         pltSMRL = plt.bar(sfBands.lowerLine, SMR_LR[0], sfBands.nLines, alpha=0.5, color="green")
-        # for i in range(len(LRMS)):
-        #     if LRMS[i]: pltSMRL[i].set_color('r')
-        # plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold","Actual threshold"])
         plt.legend([pltMDCT, pltThresh], ["signal MDCT SPL", "Actual threshold"])
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('L channel: SPL [dB]')
@@ -459,11 +458,8 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
 
         plt.subplot(212)
         plt.semilogx(MDCT_Spl_LR[1], 'k')
-        # plt.semilogx(BTHR_LR[1], 'r')
         plt.semilogx(THR_LR[1], 'b--')
         pltSMRR = plt.bar(sfBands.lowerLine, SMR_LR[1], sfBands.nLines, alpha=0.5, color="green")
-        # for i in range(len(LRMS)):
-        #     if LRMS[i]: pltSMRR[i].set_color('r')
         plt.xlabel('Freq (Hz)')
         plt.ylabel('R channel: SPL [dB]')
         plt.xlim((0,1024))
@@ -477,8 +473,6 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
         pltBthresh, = plt.semilogx( BTHR_MS[0], 'r' )
         pltThresh, = plt.semilogx( THR_MS[0], 'b--' )
         pltSMRM = plt.bar(sfBands.lowerLine, SMR_MS[0], sfBands.nLines, alpha=0.5, color="green")
-        # for i in range(len(LRMS)):
-        #     if LRMS[i]: pltSMRM[i].set_color('r')
         plt.legend([pltMDCT, pltBthresh, pltThresh], ["signal MDCT SPL", "Basic threshold", "Actual Threshold"])
         plt.xlabel('Freq (Hz)')
         plt.ylabel('M channel: SPL (dB)')
@@ -489,17 +483,20 @@ def getStereoMaskThreshold(data, MDCTdata, MDCTscale, sampleRate, sfBands, codin
         plt.semilogx(BTHR_MS[1], 'r' )
         plt.semilogx(THR_MS[1], 'b--' )
         pltSMRS = plt.bar(sfBands.lowerLine, SMR_MS[1], sfBands.nLines, alpha=0.5, color="green")
-        # for i in range(len(LRMS)):
-        #     if LRMS[i]: pltSMRS[i].set_color('r')
         plt.xlabel('Freq (Hz)')
         plt.ylabel('S channel: SPL (dB)')
         plt.xlim((0,1024))
 
-        plt.show()
+        plotBars = [pltSMRL,pltSMRR,pltSMRM,pltSMRS, print_thresh]
 
-        # raw_input('Press enter to go to the next block... BRAH')
+    else:
 
-    return SMR_LR,SMR_MS,MDCTdata,MDCT_data_MS
+        plotBars = [False,False,False,False,False]
+
+    ################ End Threshold Plots ################
+
+
+    return SMR_LR,SMR_MS,MDCTdata,MDCT_data_MS, plotBars
 
 if __name__ == '__main__':
 
@@ -510,7 +507,7 @@ if __name__ == '__main__':
     test_problem1e = False
     test_problem1f = False
     test_problem1g = False
-    test_mld = True
+    test_mld = False
     test_stereo_masks = False
 
     #### construct input signal ####

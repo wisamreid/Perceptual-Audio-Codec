@@ -7,7 +7,7 @@ infinity = float('inf')
 negative_infinity = float('-inf')
 
 # Question 1.c)
-def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
+def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR, Threshold):
     """
     Allocates bits to scale factor bands so as to flatten the NMR across the spectrum
 
@@ -41,7 +41,7 @@ def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
 
     while valid.any():
         iMax = np.arange(nBands)[valid][np.argmax((SMR-bits*6.)[valid])]
-        if max(SMR-(bits-1)*6.)<(-15.0): valid[iMax] = False
+        if max(SMR-(bits-1)*6.)<(Threshold): valid[iMax] = False
         # print max(SMR-(bits-1)*6.)
         if (totalBits - nLines[iMax]) >=0:
             bits[iMax] += 1
@@ -51,13 +51,13 @@ def BitAlloc(bitBudget, extraBits, maxMantBits, nBands, nLines, SMR):
         else:
             valid[iMax] = False
 
-    if max(SMR-(bits-1)*6.)<(-15.): print '*'
+    if max(SMR-(bits-1)*6.)<(Threshold): print '*'
     totalBits+=sum(nLines[bits==1])
     bits[bits==1]=0
 
-    bitDifference=totalBits-extraBits
+    # bitDifference=totalBits-extraBits
 
-    return bits,bitDifference
+    return bits
 
 
 #-----------------------------------------------------------------------------
