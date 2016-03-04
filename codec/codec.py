@@ -77,7 +77,10 @@ def Encode(data,codingParams):
     for iBand in range(sfBands.nBands):
         lowLine = sfBands.lowerLine[iBand]
         highLine = sfBands.upperLine[iBand] + 1  # extra value is because slices don't include last value
-        LRMS[iBand] = sum(np.power(L[lowLine:highLine],2)-np.power(R[lowLine:highLine],2))<0.8*sum(np.power(L[lowLine:highLine],2)+np.power(R[lowLine:highLine],2))
+        LRMS[iBand] = abs(sum(np.power(L[lowLine:highLine],2)-np.power(R[lowLine:highLine],2)))<0.8*abs(sum(np.power(L[lowLine:highLine],2)+np.power(R[lowLine:highLine],2)))
+
+    # LRMS=np.zeros(sfBands.nBands,dtype='int')
+    # LRMS[sfBands.nBands-4:]=0
 
     (scaleFactor,bitAlloc,mantissa,overallScaleFactor)=EncodeDualChannel(data,codingParams,LRMS)
 
@@ -209,7 +212,7 @@ def EncodeDualChannel(data,codingParams,LRMS):
 
     # perform bit allocation using SMR results
     for iCh in range(codingParams.nChannels):
-        ba,bitDifference=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs[iCh])
+        ba,bitDifference=BitAlloc(bitBudget, codingParams.extraBits, maxMantBits, sfBands.nBands, sfBands.nLines, SMRs[iCh], LRMS)
         bitAlloc.append(ba)
         codingParams.extraBits+=bitDifference
 
