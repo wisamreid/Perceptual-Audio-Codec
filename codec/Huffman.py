@@ -361,11 +361,14 @@ class Huffman:
     #. @Return: a number of bits
     #----------------------------------------------------------#
     def withdrawBits(self):
-        extraBits = 0
+        extraBit = 0
         if self.bitDeposit > 10:
-            extraBits = self.bitDeposit/100
-            self.bitDeposit -= extraBits
-        return extraBits
+            extraBit = self.bitDeposit/100
+            self.bitDeposit -= extraBit
+        elif self.bitDeposit < 0:
+            extraBit = self.bitDeposit
+            self.bitDeposit = 0
+        return extraBit
 
     def getBitDeposit(self):
         return self.bitDeposit
@@ -389,6 +392,11 @@ class Huffman:
 #------------------------------------------------------------------------#
 """---TESTING!----"""
 if __name__ == "__main__":
+    
+    with open('huffmanTables.pickle', 'rb') as handle:
+        huffmanTables = pickle.load(handle)
+        for id in huffmanTables.keys():
+            print "Table ",id,":", huffmanTables[id].encodingTable[-1]
 
 #    with open('huffmanTables.pickle', 'wb') as handle:
 #        pickle.dump(dict(), handle)
