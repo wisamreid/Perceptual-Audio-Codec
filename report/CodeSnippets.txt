@@ -1,0 +1,30 @@
+
+% ENCODER FIGURE
+\begin{figure}[t] 
+\centering
+\includegraphics[width=3 in]{encoder}
+\caption{Encoder Diagram}
+\label{fig:encoder}
+\end{figure}
+
+% DECODER FIGURE
+\begin{figure}[b] 
+\centering
+\includegraphics[width=3 in]{decoder}
+\caption{Decoder Diagram}
+\label{fig:decoder}
+\end{figure}
+
+\begin{table}[tbp]
+\centering
+\caption{Detailed Timeline}
+\label{my-label}
+\begin{tabular}{ |c|c|m{4cm}| }
+\hline
+Stage         & Date                           & Accomplishment                                   \\ \hline
+Stage I       & 2/20-2/22 & Finalize building blocks, function specs and best baseline coder       \\ \hline
+Stage II      & 2/23-2/29 & Implement stereo encoding with binaural masking and Huffman encoding   \\ \hline
+Final Stage   & 3/1-3/2                        & Perform double-blind, triple-stimulus listening test to evaluate codec \\ \hline
+Final Writeup & 3/3-3/4                        & Finish the write up of the final project                               \\ \hline
+\end{tabular}
+\end{table}
