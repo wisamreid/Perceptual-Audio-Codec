@@ -12,4 +12,4 @@ The 'master' branch includes Huffman coding and spectral intensity derived M/S c
 
 The 'cleanup' branch uses a bitallocation minimization based M/S coding decision.
 
-[See Final Report Here](./blob/master/report/WAKProjectPaper.pdf)
+[See Final Report Here](./report/WAKProjectPaper.pdf)
